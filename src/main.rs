@@ -36,7 +36,7 @@ fn run_user_app<'a>(program: &'a str, args: impl IntoIterator<Item = &'a str>) -
     let user_task = task::spawn_user_task(
         Arc::new(Mutex::new(uspace)),
         UspaceContext::new(entry_vaddr.into(), ustack_top, 2333),
-        0,
+        axconfig::plat::USER_HEAP_BASE,
     );
     user_task.join()
 }
