@@ -66,6 +66,7 @@ fn handle_syscall(tf: &TrapFrame, syscall_num: usize) -> isize {
         Sysno::getcwd => sys_getcwd(tf.arg0() as _, tf.arg1() as _) as _,
         Sysno::dup => sys_dup(tf.arg0() as _) as _,
         Sysno::dup3 => sys_dup3(tf.arg0() as _, tf.arg1() as _) as _,
+        Sysno::fcntl => sys_fcntl(tf.arg0() as _, tf.arg1() as _, tf.arg2() as _) as _,
         Sysno::clone => sys_clone(
             tf.arg0() as _,
             tf.arg1() as _,
@@ -102,6 +103,7 @@ fn handle_syscall(tf: &TrapFrame, syscall_num: usize) -> isize {
         ) as _,
         Sysno::unlinkat => sys_unlinkat(tf.arg0() as _, tf.arg1() as _, tf.arg2() as _),
         Sysno::uname => sys_uname(tf.arg0() as _) as _,
+        Sysno::sysinfo => sys_sysinfo(tf.arg0() as _) as _,
         Sysno::fstat => sys_fstat(tf.arg0() as _, tf.arg1() as _) as _,
         #[cfg(target_arch = "x86_64")]
         Sysno::newfstatat => sys_fstatat(tf.arg0() as _, tf.arg1() as _, tf.arg2() as _) as _,
@@ -135,6 +137,12 @@ fn handle_syscall(tf: &TrapFrame, syscall_num: usize) -> isize {
         Sysno::setuid => sys_setuid(tf.arg0() as _) as _,
         Sysno::setgid => sys_setgid(tf.arg0() as _) as _,
         Sysno::rt_sigprocmask => sys_rt_sigprocmask(
+            tf.arg0() as _,
+            tf.arg1() as _,
+            tf.arg2() as _,
+            tf.arg3() as _,
+        ) as _,
+        Sysno::rt_sigaction => sys_rt_sigaction(
             tf.arg0() as _,
             tf.arg1() as _,
             tf.arg2() as _,

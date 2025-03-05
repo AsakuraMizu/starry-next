@@ -10,10 +10,14 @@ pub(crate) fn sys_dup3(old_fd: c_int, new_fd: c_int) -> c_int {
     api::sys_dup2(old_fd, new_fd)
 }
 
-pub(crate) fn sys_openat(dirfd: i32, path: *const c_char, flags: i32, modes: mode_t) -> isize {
-    api::sys_openat(dirfd, path, flags, modes) as isize
+pub(crate) fn sys_openat(dirfd: i32, path: *const c_char, flags: i32, modes: mode_t) -> c_int {
+    api::sys_openat(dirfd, path, flags, modes)
 }
 
 pub(crate) fn sys_close(fd: c_int) -> c_int {
     api::sys_close(fd)
+}
+
+pub(crate) fn sys_fcntl(fd: c_int, cmd: c_int, arg: usize) -> c_int {
+    api::sys_fcntl(fd, cmd, arg)
 }
