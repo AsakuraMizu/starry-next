@@ -19,15 +19,13 @@ use axstd::println;
 use axsync::Mutex;
 use memory_addr::VirtAddr;
 
-#[allow(unused)]
-const BASIC_TESTCASES_PASSED: &[&str] = &[
+const BASIC_TESTCASES: &[&str] = &[
     "brk",
     "chdir",
     "clone",
     "close",
     "dup",
     "dup2",
-    "execve",
     "exit",
     "fork",
     "fstat",
@@ -53,7 +51,8 @@ const BASIC_TESTCASES_PASSED: &[&str] = &[
     "yield",
 ];
 
-const BASIC_TESTCASES: &[&str] = &[
+#[allow(unused)]
+const BASIC_TESTCASES_FAILED: &[&str] = &[
     "execve", // failed on loongarch64
     // not implemented
     "mount", "umount",
