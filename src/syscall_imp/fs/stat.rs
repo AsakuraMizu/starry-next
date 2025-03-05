@@ -1,4 +1,4 @@
-use core::ffi::c_void;
+use core::ffi::{c_char, c_void};
 
 use axerrno::LinuxError;
 
@@ -74,10 +74,22 @@ pub(crate) fn sys_fstat(fd: i32, kstatbuf: *mut c_void) -> i32 {
     let kstatbuf = kstatbuf as *mut Kstat;
     let mut statbuf = arceos_posix_api::ctypes::stat::default();
 
-    if unsafe {
-        arceos_posix_api::sys_fstat(fd, &mut statbuf as *mut arceos_posix_api::ctypes::stat)
-    } < 0
-    {
+    if unsafe { arceos_posix_api::sys_fstat(fd, &mut statbuf as *mut _) } < 0 {
+        return -1;
+    }
+
+    unsafe {
+        let kstat = Kstat::from(statbuf);
+        kstatbuf.write(kstat);
+    }
+    0
+}
+
+pub(crate) fn sys_fstatat(dirfd: i32, path: *const c_char, kstatbuf: *mut c_void) -> i32 {
+    let kstatbuf = kstatbuf as *mut Kstat;
+    let mut statbuf = arceos_posix_api::ctypes::stat::default();
+
+    if unsafe { arceos_posix_api::sys_fstatat(dirfd, path, &mut statbuf as *mut _) } < 0 {
         return -1;
     }
 

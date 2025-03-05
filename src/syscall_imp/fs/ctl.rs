@@ -277,7 +277,7 @@ pub(crate) fn sys_linkat(
 /// path: the name of link to be removed
 /// flags: can be 0 or AT_REMOVEDIR
 /// return 0 when success, else return -1
-pub fn sys_unlinkat(dir_fd: isize, path: *const u8, flags: usize) -> isize {
+pub(crate) fn sys_unlinkat(dir_fd: isize, path: *const u8, flags: usize) -> isize {
     const AT_REMOVEDIR: usize = 0x200;
 
     arceos_posix_api::handle_file_path(dir_fd, Some(path), false)
@@ -309,4 +309,40 @@ pub fn sys_unlinkat(dir_fd: isize, path: *const u8, flags: usize) -> isize {
 
 pub(crate) fn sys_getcwd(buf: *mut c_char, size: usize) -> *mut c_char {
     arceos_posix_api::sys_getcwd(buf, size)
+}
+
+pub(crate) fn sys_mount(
+    source: *const c_char,
+    target: *const c_char,
+    filesystemtype: *const c_char,
+    _flags: u64,
+    _data: *const c_void,
+) -> i32 {
+    let Ok(source) = arceos_posix_api::char_ptr_to_str(source) else {
+        return -1;
+    };
+    let Ok(target) = arceos_posix_api::char_ptr_to_str(target) else {
+        return -1;
+    };
+    let Ok(filesystemtype) = arceos_posix_api::char_ptr_to_str(filesystemtype) else {
+        return -1;
+    };
+
+    axfs::api::mount(source, target, filesystemtype)
+        .map(|_| 0)
+        .unwrap_or_else(|e| {
+            warn!("Failed to mount: {e:?}");
+            -1
+        })
+}
+
+pub(crate) fn sys_umount(target: *const c_char) -> i32 {
+    let Ok(target) = arceos_posix_api::char_ptr_to_str(target) else {
+        return -1;
+    };
+
+    axfs::api::umount(target).map(|_| 0).unwrap_or_else(|e| {
+        warn!("Failed to umount: {e:?}");
+        -1
+    })
 }

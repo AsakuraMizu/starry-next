@@ -14,24 +14,37 @@ pub struct UtsName {
     pub domainname: [u8; 65],
 }
 
-impl Default for UtsName {
-    fn default() -> Self {
-        Self {
-            sysname: Self::from_str("Starry"),
-            nodename: Self::from_str("Starry - machine[0]"),
-            release: Self::from_str("10.0.0"),
-            version: Self::from_str("10.0.0"),
-            machine: Self::from_str("10.0.0"),
-            domainname: Self::from_str("https://github.com/BattiestStone4/Starry-On-ArceOS"),
-        }
-    }
+fn pad_str<const N: usize>(s: &str) -> [u8; N] {
+    let mut arr = [0u8; N];
+    let bytes = s.as_bytes();
+    arr[..bytes.len()].copy_from_slice(bytes);
+    arr
 }
 
-impl UtsName {
-    fn from_str(info: &str) -> [u8; 65] {
-        let mut data: [u8; 65] = [0; 65];
-        data[..info.len()].copy_from_slice(info.as_bytes());
-        data
+impl Default for UtsName {
+    fn default() -> Self {
+        cfg_if::cfg_if! {
+            if #[cfg(target_arch = "x86_64")] {
+                let machine = "x86_64";
+            } else if #[cfg(target_arch = "aarch64")] {
+                let machine = "aarch64";
+            } else if #[cfg(target_arch = "riscv64")] {
+                let machine = "riscv64";
+            } else if #[cfg(target_arch = "loongarch64")] {
+                let machine = "loongarch64";
+            } else {
+                let machine = "unknown";
+            }
+        }
+
+        Self {
+            sysname: pad_str("StarryOS"),
+            nodename: pad_str("starry.next"),
+            release: pad_str("0.1.0"),
+            version: pad_str("ArceOS"),
+            machine: pad_str(machine),
+            domainname: pad_str("https://github.com/AsakuraMizu/starry-next/"),
+        }
     }
 }
 

@@ -5,7 +5,7 @@ use axfs::{CURRENT_DIR, CURRENT_DIR_PATH};
 use core::{
     alloc::Layout,
     cell::UnsafeCell,
-    sync::atomic::{AtomicU64, Ordering},
+    sync::atomic::{AtomicU64, AtomicUsize, Ordering},
 };
 use spin::Once;
 
@@ -42,9 +42,9 @@ pub struct TaskExt {
     /// The time statistics
     pub time: UnsafeCell<TimeStat>,
     /// The user heap bottom
-    pub heap_bottom: AtomicU64,
+    pub heap_bottom: AtomicUsize,
     /// The user heap top
-    pub heap_top: AtomicU64,
+    pub heap_top: AtomicUsize,
 }
 
 impl TaskExt {
@@ -52,7 +52,7 @@ impl TaskExt {
         proc_id: usize,
         uctx: UspaceContext,
         aspace: Arc<Mutex<AddrSpace>>,
-        heap_bottom: u64,
+        heap_bottom: usize,
     ) -> Self {
         Self {
             proc_id,
@@ -63,8 +63,8 @@ impl TaskExt {
             aspace,
             ns: AxNamespace::new_thread_local(),
             time: TimeStat::new().into(),
-            heap_bottom: AtomicU64::new(heap_bottom),
-            heap_top: AtomicU64::new(heap_bottom),
+            heap_bottom: AtomicUsize::new(heap_bottom),
+            heap_top: AtomicUsize::new(heap_bottom),
         }
     }
 
@@ -173,20 +173,20 @@ impl TaskExt {
         unsafe { (*time).output() }
     }
 
-    pub(crate) fn get_heap_bottom(&self) -> u64 {
+    pub(crate) fn get_heap_bottom(&self) -> usize {
         self.heap_bottom.load(Ordering::Acquire)
     }
 
     #[allow(unused)]
-    pub(crate) fn set_heap_bottom(&self, bottom: u64) {
+    pub(crate) fn set_heap_bottom(&self, bottom: usize) {
         self.heap_bottom.store(bottom, Ordering::Release)
     }
 
-    pub(crate) fn get_heap_top(&self) -> u64 {
+    pub(crate) fn get_heap_top(&self) -> usize {
         self.heap_top.load(Ordering::Acquire)
     }
 
-    pub(crate) fn set_heap_top(&self, top: u64) {
+    pub(crate) fn set_heap_top(&self, top: usize) {
         self.heap_top.store(top, Ordering::Release)
     }
 }
@@ -219,7 +219,7 @@ axtask::def_task_ext!(TaskExt);
 pub fn spawn_user_task(
     aspace: Arc<Mutex<AddrSpace>>,
     uctx: UspaceContext,
-    heap_bottom: u64,
+    heap_bottom: usize,
 ) -> AxTaskRef {
     let mut task = TaskInner::new(
         || {

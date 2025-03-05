@@ -1,5 +1,6 @@
 mod fs;
 mod mm;
+mod signal;
 mod task;
 mod utils;
 
@@ -13,6 +14,7 @@ use syscalls::Sysno;
 
 use self::fs::*;
 use self::mm::*;
+use self::signal::*;
 use self::task::*;
 use self::utils::*;
 
@@ -94,6 +96,10 @@ fn handle_syscall(tf: &TrapFrame, syscall_num: usize) -> isize {
         Sysno::unlinkat => sys_unlinkat(tf.arg0() as _, tf.arg1() as _, tf.arg2() as _),
         Sysno::uname => sys_uname(tf.arg0() as _) as _,
         Sysno::fstat => sys_fstat(tf.arg0() as _, tf.arg1() as _) as _,
+        #[cfg(target_arch = "x86_64")]
+        Sysno::newfstatat => sys_fstatat(tf.arg0() as _, tf.arg1() as _, tf.arg2() as _) as _,
+        #[cfg(not(target_arch = "x86_64"))]
+        Sysno::fstatat => sys_fstatat(tf.arg0() as _, tf.arg1() as _, tf.arg2() as _) as _,
         Sysno::statx => sys_statx(
             tf.arg0() as _,
             tf.arg1() as _,
@@ -109,6 +115,24 @@ fn handle_syscall(tf: &TrapFrame, syscall_num: usize) -> isize {
         Sysno::set_tid_address => sys_set_tid_address(tf.arg0() as _),
         Sysno::clock_gettime => sys_clock_gettime(tf.arg0() as _, tf.arg1() as _) as _,
         Sysno::exit_group => sys_exit_group(tf.arg0() as _),
+        Sysno::mount => sys_mount(
+            tf.arg0() as _,
+            tf.arg1() as _,
+            tf.arg2() as _,
+            tf.arg3() as _,
+            tf.arg4() as _,
+        ) as _,
+        Sysno::umount2 => sys_umount(tf.arg0() as _) as _,
+        Sysno::getuid => sys_getuid() as _,
+        Sysno::getgid => sys_getgid() as _,
+        Sysno::setuid => sys_setuid(tf.arg0() as _) as _,
+        Sysno::setgid => sys_setgid(tf.arg0() as _) as _,
+        Sysno::rt_sigprocmask => sys_rt_sigprocmask(
+            tf.arg0() as _,
+            tf.arg1() as _,
+            tf.arg2() as _,
+            tf.arg3() as _,
+        ) as _,
         _ => {
             warn!("Unimplemented syscall: {}", syscall_num);
             axtask::exit(LinuxError::ENOSYS as _)
