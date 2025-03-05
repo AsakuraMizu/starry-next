@@ -19,15 +19,52 @@ use axstd::println;
 use axsync::Mutex;
 use memory_addr::VirtAddr;
 
+#[allow(unused)]
+const BASIC_TESTCASES_PASSED: &[&str] = &[
+    "brk",
+    "chdir",
+    "clone",
+    "close",
+    "dup",
+    "dup2",
+    "execve",
+    "exit",
+    "fork",
+    "fstat",
+    "sleep",
+    "getcwd",
+    "getdents",
+    "getpid",
+    "getppid",
+    "gettimeofday",
+    "mkdir_",
+    "mmap",
+    "munmap",
+    "open",
+    "openat",
+    "pipe",
+    "read",
+    "times",
+    "uname",
+    "unlink",
+    "wait",
+    "waitpid",
+    "write",
+    "yield",
+];
+
+const BASIC_TESTCASES: &[&str] = &[
+    "execve", // failed on loongarch64
+    // not implemented
+    "mount", "umount",
+];
+
 #[unsafe(no_mangle)]
 fn main() {
-    let testcases = option_env!("AX_TESTCASES_LIST")
-        .unwrap_or_else(|| "Please specify the testcases list by making user_apps")
-        .split(',')
-        .filter(|&x| !x.is_empty());
     println!("#### OS COMP TEST GROUP START basic-musl ####");
-    for testcase in testcases {
-        println!("Testing {}: ", testcase.split('/').next_back().unwrap());
+    axfs::api::set_current_dir("/musl/basic").expect("Failed to set current dir");
+    for testcase in BASIC_TESTCASES {
+        println!("Testing {}:", testcase);
 
         let args = vec![testcase.to_string()];
         let mut uspace = axmm::new_user_aspace(
@@ -35,7 +72,8 @@ fn main() {
             axconfig::plat::USER_SPACE_SIZE,
         )
         .expect("Failed to create user address space");
-        let (entry_vaddr, ustack_top) = mm::load_user_app(&mut (args.into()), &mut uspace).unwrap();
+        let (entry_vaddr, ustack_top) = mm::load_user_app(&mut (args.into()), &mut uspace)
+            .unwrap_or_else(|e| panic!("Failed to load user app {}: {}", testcase, e));
         let user_task = task::spawn_user_task(
             Arc::new(Mutex::new(uspace)),
             UspaceContext::new(entry_vaddr.into(), ustack_top, 2333),

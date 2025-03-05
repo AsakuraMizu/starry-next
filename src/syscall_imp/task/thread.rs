@@ -127,14 +127,9 @@ pub(crate) fn sys_clone(
 
         let curr_task = current();
 
-        if let Ok(new_task_id) = curr_task
+        Ok(curr_task
             .task_ext()
-            .clone_task(flags, stack, ptid, tls, ctid)
-        {
-            Ok(new_task_id as isize)
-        } else {
-            Err(LinuxError::ENOMEM)
-        }
+            .clone_task(flags, stack, ptid, tls, ctid)? as isize)
     })
 }
 

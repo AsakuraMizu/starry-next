@@ -46,7 +46,7 @@ fn map_elf(
             || real_interp_path == "/lib64/ld-linux-loongarch-lp64d.so.1"
         {
             // TODO: Use soft link
-            real_interp_path = String::from("./musl/lib/libc.so");
+            real_interp_path = String::from("/musl/lib/libc.so");
         }
 
         let interp_data = axfs::api::read(real_interp_path.as_str())?;
