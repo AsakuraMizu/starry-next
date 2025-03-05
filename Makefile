@@ -1,6 +1,11 @@
-# TODO: setup cli and vendor
+export RUSTUP_TOOLCHAIN=nightly-2025-01-18
 
-all: rv la
+all: setup rv la
+
+setup:
+	mkdir -p .cargo
+	cp cargo-config.toml .cargo/config.toml
+	cargo install --path ./cargo-arceos
 
 rv:
 	cargo arceos build -r -A riscv64 -c configs/riscv64.toml -L off -F axstd/bus-mmio
@@ -14,4 +19,4 @@ clean:
 	cargo clean
 	rm -f kernel-rv kernel-la
 
-.PHONY: rv la clean
+.PHONY: all setup rv la clean

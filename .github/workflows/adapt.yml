@@ -1,0 +1,51 @@
+name: Adapt
+
+on: push
+
+jobs:
+  adapt:
+    name: Adapt code for oscomp
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          cache-targets: false
+
+      - name: Install musl-dev
+        uses: awalsh128/cache-apt-pkgs-action@latest
+        with:
+          packages: musl-dev
+          version: 1.0
+
+      - run: cargo install cargo-vendor-filterer
+
+      - name: Checkout cargo-arceos
+        uses: actions/checkout@v4
+        with:
+          repository: AsakuraMizu/cargo-arceos
+          path: cargo-arceos
+
+      - name: Vendor dependencies
+        run: |
+          cargo install --path cargo-arceos
+          cargo arceos check -c configs/dummy.toml
+          cargo vendor-filterer -s cargo-arceos/Cargo.toml > cargo-config.toml
+
+      - name: Push to remote repository
+        run: |
+          git config --unset-all http.https://github.com/.extraheader
+          git config --global user.email ${{ secrets.EMAIL }}
+          git config --global user.name ${{ secrets.USERNAME }}
+
+          rm -rf cargo-arceos/.git
+          git add cargo-arceos vendor cargo-config.toml
+          git commit -m "Adapt code for oscomp"
+
+          git remote add oscomp ${{ secrets.REMOTE_URL }}
+          git push oscomp ${{ secrets.BRANCH }} --force

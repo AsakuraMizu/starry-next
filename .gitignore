@@ -1,5 +1,4 @@
 /target
-*.elf
-*.bin
-*.img
-kernel-*
+.cargo
+sdcard-*.img
+/kernel-*

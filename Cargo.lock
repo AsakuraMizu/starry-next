@@ -83,6 +83,7 @@ dependencies = [
 [[package]]
 name = "arceos_api"
 version = "0.1.0"
+source = "git+https://github.com/AsakuraMizu/arceos.git#8a31a7072a1cb3da13e622d069b22968d210a74c"
 dependencies = [
  "axconfig",
  "axerrno",
@@ -97,6 +98,7 @@ dependencies = [
 [[package]]
 name = "arceos_posix_api"
 version = "0.1.0"
+source = "git+https://github.com/AsakuraMizu/arceos.git#8a31a7072a1cb3da13e622d069b22968d210a74c"
 dependencies = [
  "axalloc",
  "axconfig",
@@ -155,6 +157,7 @@ checksum = "ace50bade8e6234aa140d9a2f552bbee1db4d353f69b8217bc503490fc1a9f26"
 [[package]]
 name = "axalloc"
 version = "0.1.0"
+source = "git+https://github.com/AsakuraMizu/arceos.git#8a31a7072a1cb3da13e622d069b22968d210a74c"
 dependencies = [
  "allocator",
  "axerrno",
@@ -167,6 +170,7 @@ dependencies = [
 [[package]]
 name = "axconfig"
 version = "0.1.0"
+source = "git+https://github.com/AsakuraMizu/arceos.git#8a31a7072a1cb3da13e622d069b22968d210a74c"
 dependencies = [
  "axconfig-gen-macros",
 ]
@@ -196,6 +200,7 @@ dependencies = [
 [[package]]
 name = "axdriver"
 version = "0.1.0"
+source = "git+https://github.com/AsakuraMizu/arceos.git#8a31a7072a1cb3da13e622d069b22968d210a74c"
 dependencies = [
  "axalloc",
  "axconfig",
@@ -264,6 +269,7 @@ dependencies = [
 [[package]]
 name = "axfeat"
 version = "0.1.0"
+source = "git+https://github.com/AsakuraMizu/arceos.git#8a31a7072a1cb3da13e622d069b22968d210a74c"
 dependencies = [
  "axalloc",
  "axdriver",
@@ -280,6 +286,7 @@ dependencies = [
 [[package]]
 name = "axfs"
 version = "0.1.0"
+source = "git+https://github.com/AsakuraMizu/arceos.git#8a31a7072a1cb3da13e622d069b22968d210a74c"
 dependencies = [
  "axdriver",
  "axdriver_block",
@@ -335,6 +342,7 @@ dependencies = [
 [[package]]
 name = "axhal"
 version = "0.1.0"
+source = "git+https://github.com/AsakuraMizu/arceos.git#8a31a7072a1cb3da13e622d069b22968d210a74c"
 dependencies = [
  "aarch64-cpu",
  "arm_gicv2",
@@ -380,6 +388,7 @@ dependencies = [
 [[package]]
 name = "axlog"
 version = "0.1.0"
+source = "git+https://github.com/AsakuraMizu/arceos.git#8a31a7072a1cb3da13e622d069b22968d210a74c"
 dependencies = [
  "cfg-if",
  "crate_interface",
@@ -390,6 +399,7 @@ dependencies = [
 [[package]]
 name = "axmm"
 version = "0.1.0"
+source = "git+https://github.com/AsakuraMizu/arceos.git#8a31a7072a1cb3da13e622d069b22968d210a74c"
 dependencies = [
  "axalloc",
  "axconfig",
@@ -405,6 +415,7 @@ dependencies = [
 [[package]]
 name = "axnet"
 version = "0.1.0"
+source = "git+https://github.com/AsakuraMizu/arceos.git#8a31a7072a1cb3da13e622d069b22968d210a74c"
 dependencies = [
  "axdriver",
  "axdriver_net",
@@ -423,6 +434,7 @@ dependencies = [
 [[package]]
 name = "axns"
 version = "0.1.0"
+source = "git+https://github.com/AsakuraMizu/arceos.git#8a31a7072a1cb3da13e622d069b22968d210a74c"
 dependencies = [
  "crate_interface",
  "lazyinit",
@@ -431,6 +443,7 @@ dependencies = [
 [[package]]
 name = "axruntime"
 version = "0.1.0"
+source = "git+https://github.com/AsakuraMizu/arceos.git#8a31a7072a1cb3da13e622d069b22968d210a74c"
 dependencies = [
  "axalloc",
  "axconfig",
@@ -451,6 +464,7 @@ dependencies = [
 [[package]]
 name = "axstd"
 version = "0.1.0"
+source = "git+https://github.com/AsakuraMizu/arceos.git#8a31a7072a1cb3da13e622d069b22968d210a74c"
 dependencies = [
  "arceos_api",
  "axerrno",
@@ -462,6 +476,7 @@ dependencies = [
 [[package]]
 name = "axsync"
 version = "0.1.0"
+source = "git+https://github.com/AsakuraMizu/arceos.git#8a31a7072a1cb3da13e622d069b22968d210a74c"
 dependencies = [
  "axtask",
  "kspin",
@@ -470,6 +485,7 @@ dependencies = [
 [[package]]
 name = "axtask"
 version = "0.1.0"
+source = "git+https://github.com/AsakuraMizu/arceos.git#8a31a7072a1cb3da13e622d069b22968d210a74c"
 dependencies = [
  "axconfig",
  "axhal",
