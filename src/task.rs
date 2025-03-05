@@ -1,4 +1,8 @@
-use alloc::{string::ToString, sync::Arc, vec, vec::Vec};
+use alloc::{
+    string::{String, ToString},
+    sync::Arc,
+    vec::Vec,
+};
 use arceos_posix_api::FD_TABLE;
 use axerrno::{AxError, AxResult};
 use axfs::{CURRENT_DIR, CURRENT_DIR_PATH};
@@ -114,7 +118,7 @@ impl TaskExt {
             return_id as usize,
             new_uctx,
             Arc::new(Mutex::new(new_aspace)),
-            0,
+            axconfig::plat::USER_HEAP_BASE,
         );
         new_task_ext.ns_init_new();
         new_task.init_task_ext(new_task_ext);
@@ -326,7 +330,7 @@ pub fn wait_pid(pid: i32, exit_code_ptr: *mut i32) -> Result<u64, WaitStatus> {
     Err(answer_status)
 }
 
-pub fn exec(name: &str) -> AxResult<()> {
+pub fn exec(name: &str, args: impl IntoIterator<Item = String>) -> AxResult<()> {
     let current_task = current();
 
     let program_name = name.to_string();
@@ -340,10 +344,8 @@ pub fn exec(name: &str) -> AxResult<()> {
     aspace.unmap_user_areas()?;
     axhal::arch::flush_tlb(None);
 
-    let args = vec![program_name.clone()];
-
-    let (entry_point, user_stack_base) = crate::mm::load_user_app(&mut (args.into()), &mut aspace)
-        .map_err(|_| {
+    let (entry_point, user_stack_base) =
+        crate::mm::load_user_app(&mut args.into_iter().collect(), &mut aspace).map_err(|_| {
             error!("Failed to load app {}", program_name);
             AxError::NotFound
         })?;

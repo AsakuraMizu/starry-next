@@ -90,7 +90,7 @@ fn basic_test() {
 
 fn busybox_test() {
     axfs::api::set_current_dir("/musl").expect("Failed to set current dir");
-    let exit_code = run_user_app("busybox", ["echo", "1"]);
+    let exit_code = run_user_app("busybox", ["sh", "busybox_testcode.sh"]);
     info!("busybox exited with code: {:?}", exit_code);
 }
 

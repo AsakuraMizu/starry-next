@@ -1,5 +1,6 @@
 use core::ffi::{c_char, c_int};
 
+use alloc::{string::ToString, vec::Vec};
 use axerrno::LinuxError;
 use axtask::{TaskExtRef, current, yield_now};
 use num_enum::TryFromPrimitive;
@@ -41,6 +42,10 @@ pub(crate) fn sys_getppid() -> i32 {
     syscall_body!(sys_getppid, {
         Ok(axtask::current().task_ext().get_parent() as c_int)
     })
+}
+
+pub(crate) fn sys_gettid() -> i32 {
+    syscall_body!(sys_gettid, Ok(axtask::current().id().as_u64() as c_int))
 }
 
 pub(crate) fn sys_exit(status: i32) -> ! {
@@ -166,26 +171,26 @@ pub fn sys_execve(path: *const c_char, argv: *const usize, envp: *const usize) -
     syscall_body!(sys_execve, {
         let path_str = arceos_posix_api::char_ptr_to_str(path)?;
 
-        info!("execve: {:?}", path_str);
-        if path_str.split('/').filter(|s| !s.is_empty()).count() > 1 {
-            info!("Multi-level directories are not supported");
-            return Err::<isize, _>(LinuxError::EINVAL);
+        let mut args = Vec::new();
+        let mut argv = argv as *const *const c_char;
+        unsafe {
+            while !(*argv).is_null() {
+                let arg = arceos_posix_api::char_ptr_to_str(*argv)?;
+                args.push(arg.to_string());
+                argv = argv.add(1);
+            }
         }
 
-        let argv_valid = unsafe { argv.is_null() || *argv == 0 };
+        info!("execve: {:?} args: {:?}", path_str, args);
+
         let envp_valid = unsafe { envp.is_null() || *envp == 0 };
-
-        if !argv_valid {
-            info!("argv is not supported");
-        }
-
         if !envp_valid {
             info!("envp is not supported");
         }
 
-        if let Err(e) = crate::task::exec(path_str) {
+        if let Err(e) = crate::task::exec(path_str, args) {
             error!("Failed to exec: {:?}", e);
-            return Err(LinuxError::ENOSYS);
+            return Err::<isize, _>(LinuxError::ENOSYS);
         }
 
         unreachable!("execve should never return");
