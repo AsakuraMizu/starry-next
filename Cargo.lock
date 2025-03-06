@@ -83,7 +83,7 @@ dependencies = [
 [[package]]
 name = "arceos_api"
 version = "0.1.0"
-source = "git+https://github.com/AsakuraMizu/arceos.git#942a3975662cfe3288af7fcb5c4a5f285affa7d8"
+source = "git+https://github.com/AsakuraMizu/arceos.git#f1477ddc3d06b7a77d60f7bc7341170866350f9c"
 dependencies = [
  "axconfig",
  "axerrno",
@@ -98,7 +98,7 @@ dependencies = [
 [[package]]
 name = "arceos_posix_api"
 version = "0.1.0"
-source = "git+https://github.com/AsakuraMizu/arceos.git#942a3975662cfe3288af7fcb5c4a5f285affa7d8"
+source = "git+https://github.com/AsakuraMizu/arceos.git#f1477ddc3d06b7a77d60f7bc7341170866350f9c"
 dependencies = [
  "axalloc",
  "axconfig",
@@ -157,7 +157,7 @@ checksum = "ace50bade8e6234aa140d9a2f552bbee1db4d353f69b8217bc503490fc1a9f26"
 [[package]]
 name = "axalloc"
 version = "0.1.0"
-source = "git+https://github.com/AsakuraMizu/arceos.git#942a3975662cfe3288af7fcb5c4a5f285affa7d8"
+source = "git+https://github.com/AsakuraMizu/arceos.git#f1477ddc3d06b7a77d60f7bc7341170866350f9c"
 dependencies = [
  "allocator",
  "axerrno",
@@ -170,7 +170,7 @@ dependencies = [
 [[package]]
 name = "axconfig"
 version = "0.1.0"
-source = "git+https://github.com/AsakuraMizu/arceos.git#942a3975662cfe3288af7fcb5c4a5f285affa7d8"
+source = "git+https://github.com/AsakuraMizu/arceos.git#f1477ddc3d06b7a77d60f7bc7341170866350f9c"
 dependencies = [
  "axconfig-gen-macros",
 ]
@@ -200,7 +200,7 @@ dependencies = [
 [[package]]
 name = "axdriver"
 version = "0.1.0"
-source = "git+https://github.com/AsakuraMizu/arceos.git#942a3975662cfe3288af7fcb5c4a5f285affa7d8"
+source = "git+https://github.com/AsakuraMizu/arceos.git#f1477ddc3d06b7a77d60f7bc7341170866350f9c"
 dependencies = [
  "axalloc",
  "axconfig",
@@ -269,7 +269,7 @@ dependencies = [
 [[package]]
 name = "axfeat"
 version = "0.1.0"
-source = "git+https://github.com/AsakuraMizu/arceos.git#942a3975662cfe3288af7fcb5c4a5f285affa7d8"
+source = "git+https://github.com/AsakuraMizu/arceos.git#f1477ddc3d06b7a77d60f7bc7341170866350f9c"
 dependencies = [
  "axalloc",
  "axdriver",
@@ -286,7 +286,7 @@ dependencies = [
 [[package]]
 name = "axfs"
 version = "0.1.0"
-source = "git+https://github.com/AsakuraMizu/arceos.git#942a3975662cfe3288af7fcb5c4a5f285affa7d8"
+source = "git+https://github.com/AsakuraMizu/arceos.git#f1477ddc3d06b7a77d60f7bc7341170866350f9c"
 dependencies = [
  "axdriver",
  "axdriver_block",
@@ -342,7 +342,7 @@ dependencies = [
 [[package]]
 name = "axhal"
 version = "0.1.0"
-source = "git+https://github.com/AsakuraMizu/arceos.git#942a3975662cfe3288af7fcb5c4a5f285affa7d8"
+source = "git+https://github.com/AsakuraMizu/arceos.git#f1477ddc3d06b7a77d60f7bc7341170866350f9c"
 dependencies = [
  "aarch64-cpu",
  "arm_gicv2",
@@ -379,8 +379,7 @@ dependencies = [
 [[package]]
 name = "axio"
 version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d8ca9c10ea4cd42bda87a2abde281fb481c76a0b05976fd03697385ea65d5122"
+source = "git+https://github.com/AsakuraMizu/axio.git#02a281fdf9d97f1346425dbb651d940d9636736a"
 dependencies = [
  "axerrno",
 ]
@@ -388,7 +387,7 @@ dependencies = [
 [[package]]
 name = "axlog"
 version = "0.1.0"
-source = "git+https://github.com/AsakuraMizu/arceos.git#942a3975662cfe3288af7fcb5c4a5f285affa7d8"
+source = "git+https://github.com/AsakuraMizu/arceos.git#f1477ddc3d06b7a77d60f7bc7341170866350f9c"
 dependencies = [
  "cfg-if",
  "crate_interface",
@@ -399,7 +398,7 @@ dependencies = [
 [[package]]
 name = "axmm"
 version = "0.1.0"
-source = "git+https://github.com/AsakuraMizu/arceos.git#942a3975662cfe3288af7fcb5c4a5f285affa7d8"
+source = "git+https://github.com/AsakuraMizu/arceos.git#f1477ddc3d06b7a77d60f7bc7341170866350f9c"
 dependencies = [
  "axalloc",
  "axconfig",
@@ -415,7 +414,7 @@ dependencies = [
 [[package]]
 name = "axnet"
 version = "0.1.0"
-source = "git+https://github.com/AsakuraMizu/arceos.git#942a3975662cfe3288af7fcb5c4a5f285affa7d8"
+source = "git+https://github.com/AsakuraMizu/arceos.git#f1477ddc3d06b7a77d60f7bc7341170866350f9c"
 dependencies = [
  "axdriver",
  "axdriver_net",
@@ -434,7 +433,7 @@ dependencies = [
 [[package]]
 name = "axns"
 version = "0.1.0"
-source = "git+https://github.com/AsakuraMizu/arceos.git#942a3975662cfe3288af7fcb5c4a5f285affa7d8"
+source = "git+https://github.com/AsakuraMizu/arceos.git#f1477ddc3d06b7a77d60f7bc7341170866350f9c"
 dependencies = [
  "crate_interface",
  "lazyinit",
@@ -443,7 +442,7 @@ dependencies = [
 [[package]]
 name = "axruntime"
 version = "0.1.0"
-source = "git+https://github.com/AsakuraMizu/arceos.git#942a3975662cfe3288af7fcb5c4a5f285affa7d8"
+source = "git+https://github.com/AsakuraMizu/arceos.git#f1477ddc3d06b7a77d60f7bc7341170866350f9c"
 dependencies = [
  "axalloc",
  "axconfig",
@@ -464,7 +463,7 @@ dependencies = [
 [[package]]
 name = "axstd"
 version = "0.1.0"
-source = "git+https://github.com/AsakuraMizu/arceos.git#942a3975662cfe3288af7fcb5c4a5f285affa7d8"
+source = "git+https://github.com/AsakuraMizu/arceos.git#f1477ddc3d06b7a77d60f7bc7341170866350f9c"
 dependencies = [
  "arceos_api",
  "axerrno",
@@ -476,7 +475,7 @@ dependencies = [
 [[package]]
 name = "axsync"
 version = "0.1.0"
-source = "git+https://github.com/AsakuraMizu/arceos.git#942a3975662cfe3288af7fcb5c4a5f285affa7d8"
+source = "git+https://github.com/AsakuraMizu/arceos.git#f1477ddc3d06b7a77d60f7bc7341170866350f9c"
 dependencies = [
  "axtask",
  "kspin",
@@ -485,7 +484,7 @@ dependencies = [
 [[package]]
 name = "axtask"
 version = "0.1.0"
-source = "git+https://github.com/AsakuraMizu/arceos.git#942a3975662cfe3288af7fcb5c4a5f285affa7d8"
+source = "git+https://github.com/AsakuraMizu/arceos.git#f1477ddc3d06b7a77d60f7bc7341170866350f9c"
 dependencies = [
  "axconfig",
  "axhal",
@@ -761,9 +760,9 @@ dependencies = [
 
 [[package]]
 name = "either"
-version = "1.14.0"
+version = "1.15.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b7914353092ddf589ad78f25c5c1c21b7f80b0ff8621e7c814c3485b5306da9d"
+checksum = "48c757948c5ede0e46177b7add2e67155f70e33c07fea8284df6576da70b3719"
 
 [[package]]
 name = "embedded-hal"
@@ -799,7 +798,7 @@ dependencies = [
 [[package]]
 name = "flatten_objects"
 version = "0.2.2"
-source = "git+https://github.com/AsakuraMizu/flatten_objects.git#2e4d007fd12325349a47b7a685116bdd3b1db5a8"
+source = "git+https://github.com/AsakuraMizu/flatten_objects.git#5b6820bb80d718461e8d51b8188165b054ff0e29"
 dependencies = [
  "bitmaps",
 ]

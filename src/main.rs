@@ -83,11 +83,12 @@ fn basic_test() {
     for testcase in BASIC_TESTCASES {
         println!("Testing {}:", testcase);
         let exit_code = run_user_app(testcase, []);
-        info!("User task {} exited with code: {:?}", testcase, exit_code);
+        info!("Testcase {} exited with code: {:?}", testcase, exit_code);
     }
     println!("#### OS COMP TEST GROUP END basic-musl ####");
 }
 
+#[allow(unused)]
 fn busybox_test() {
     axfs::api::set_current_dir("/musl").expect("Failed to set current dir");
     let exit_code = run_user_app("busybox", ["sh", "busybox_testcode.sh"]);
@@ -96,5 +97,6 @@ fn busybox_test() {
 
 #[unsafe(no_mangle)]
 fn main() {
+    basic_test();
     busybox_test();
 }
