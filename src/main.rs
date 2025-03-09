@@ -44,9 +44,9 @@ fn run_user_app(args: &[String], envs: &[String]) -> Option<i32> {
 
 #[unsafe(no_mangle)]
 fn main() {
-    let testcases = option_env!("AX_TESTCASES_LIST")
-        .unwrap_or_else(|| "Please specify the testcases list by making user_apps")
-        .split(',')
+    let testcases = include_str!("../testcases.txt")
+        .split_terminator('\n')
+        .map(str::trim)
         .filter(|&x| !x.is_empty());
 
     for testcase in testcases {

@@ -1,0 +1,11 @@
+{
+  "rust-analyzer.check.overrideCommand": [
+    "cargo",
+    "arceos",
+    "clippy",
+    "-c",
+    "configs/dummy.toml",
+    "--message-format",
+    "json-diagnostic-rendered-ansi"
+  ]
+}
