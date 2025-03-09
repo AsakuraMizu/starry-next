@@ -1,11 +1,5 @@
-/.vscode
-/.arceos
-/.cargo
-.DS_Store
-*.elf
-*.bin
-apps/*/build/
-**/target/
-**/Cargo.lock
-!/vendor/**/Cargo.lock
-/.axconfig.*
+/target
+.cargo
+sdcard-*.img
+/kernel-*
+/mnt
