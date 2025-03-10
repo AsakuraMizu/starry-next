@@ -46,6 +46,10 @@ pub(crate) fn sys_getppid() -> i32 {
     })
 }
 
+pub(crate) fn sys_gettid() -> i32 {
+    syscall_body!(sys_gettid, Ok(axtask::current().id().as_u64() as c_int))
+}
+
 pub(crate) fn sys_exit(status: i32) -> ! {
     let curr = current();
     let clear_child_tid = curr.task_ext().clear_child_tid() as *mut i32;
