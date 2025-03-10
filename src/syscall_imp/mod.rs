@@ -73,6 +73,7 @@ fn handle_syscall(tf: &TrapFrame, syscall_num: usize) -> isize {
         Sysno::nanosleep => sys_nanosleep(tf.arg0().into(), tf.arg1().into()),
         Sysno::getpid => sys_getpid(),
         Sysno::getppid => sys_getppid(),
+        Sysno::gettid => sys_gettid(),
         Sysno::exit => sys_exit(tf.arg0() as _),
         Sysno::gettimeofday => sys_get_time_of_day(tf.arg0().into()),
         Sysno::getcwd => sys_getcwd(tf.arg0().into(), tf.arg1() as _),
