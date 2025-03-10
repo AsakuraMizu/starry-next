@@ -1,5 +1,6 @@
 use core::ffi::{c_char, c_int};
 
+use alloc::{string::ToString, vec::Vec};
 use axerrno::LinuxError;
 use axtask::{TaskExtRef, current, yield_now};
 use num_enum::TryFromPrimitive;
@@ -173,34 +174,41 @@ pub(crate) fn sys_wait4(pid: i32, exit_code_ptr: UserPtr<i32>, option: u32) -> i
 
 pub fn sys_execve(
     path: UserConstPtr<c_char>,
-    argv: UserConstPtr<usize>,
-    envp: UserConstPtr<usize>,
+    argv: UserConstPtr<*const c_char>,
+    envp: UserConstPtr<*const c_char>,
 ) -> isize {
     syscall_body!(sys_execve, {
         let path_str = read_path_str(path)?;
 
-        info!("execve: {:?}", path_str);
-        if path_str.split('/').filter(|s| !s.is_empty()).count() > 1 {
-            info!("Multi-level directories are not supported");
-            return Err::<isize, _>(LinuxError::EINVAL);
+        let mut argv = argv.get()?;
+        let mut envp = envp.get()?;
+
+        let mut args = Vec::new();
+        unsafe {
+            while !(*argv).is_null() {
+                let arg = arceos_posix_api::char_ptr_to_str(*argv)?;
+                args.push(arg.to_string());
+                argv = argv.add(1);
+            }
         }
 
-        let argv = argv.get()?;
-        let envp = envp.get()?;
-        let argv_valid = unsafe { argv.is_null() || *argv == 0 };
-        let envp_valid = unsafe { envp.is_null() || *envp == 0 };
-
-        if !argv_valid {
-            info!("argv is not supported");
+        let mut envs = Vec::new();
+        unsafe {
+            while !(*envp).is_null() {
+                let arg = arceos_posix_api::char_ptr_to_str(*envp)?;
+                envs.push(arg.to_string());
+                envp = envp.add(1);
+            }
         }
 
-        if !envp_valid {
-            info!("envp is not supported");
-        }
+        info!(
+            "execve: path: {:?}, args: {:?}, envs: {:?}",
+            path_str, args, envs
+        );
 
-        if let Err(e) = crate::task::exec(path_str) {
+        if let Err(e) = crate::task::exec(path_str, &args, &envs) {
             error!("Failed to exec: {:?}", e);
-            return Err(LinuxError::ENOSYS);
+            return Err::<isize, _>(LinuxError::ENOSYS);
         }
 
         unreachable!("execve should never return");
