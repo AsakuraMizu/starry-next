@@ -1,0 +1,8 @@
+/musl/basic/brk
+/musl/basic/chdir
+/musl/basic/clone
+/musl/basic/close
+/musl/basic/dup2
+/musl/basic/dup
+/musl/basic/execve
+/musl/basic/exit

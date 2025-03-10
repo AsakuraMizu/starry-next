@@ -30,10 +30,14 @@ axfs = { git = "https://github.com/AsakuraMizu/arceos.git", features = [
 ] }
 axhal = { git = "https://github.com/AsakuraMizu/arceos.git", features = [
     "uspace",
+    "fp_simd",
 ] }
 axmm = { git = "https://github.com/AsakuraMizu/arceos.git" }
-axtask = { git = "https://github.com/AsakuraMizu/arceos.git" }
+axns = { git = "https://github.com/AsakuraMizu/arceos.git", features = [
+    "thread-local",
+] }
 axsync = { git = "https://github.com/AsakuraMizu/arceos.git" }
+axtask = { git = "https://github.com/AsakuraMizu/arceos.git" }
 arceos_posix_api = { git = "https://github.com/AsakuraMizu/arceos.git", features = [
     "uspace",
     "smp",
@@ -45,9 +49,6 @@ arceos_posix_api = { git = "https://github.com/AsakuraMizu/arceos.git", features
     "pipe",
     "select",
     "epoll",
-] }
-axns = { git = "https://github.com/AsakuraMizu/arceos.git", features = [
-    "thread-local",
 ] }
 
 [patch.crates-io]
