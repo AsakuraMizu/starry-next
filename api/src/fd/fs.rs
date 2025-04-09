@@ -4,6 +4,7 @@ use alloc::{string::String, sync::Arc};
 use axerrno::{LinuxError, LinuxResult};
 use axio::PollState;
 use axsync::{Mutex, MutexGuard};
+use linux_raw_sys::general::S_IFDIR;
 
 use super::{FileLike, Kstat, get_file_like};
 
@@ -106,7 +107,10 @@ impl FileLike for Directory {
     }
 
     fn stat(&self) -> LinuxResult<Kstat> {
-        Err(LinuxError::EBADF)
+        Ok(Kstat {
+            mode: S_IFDIR | 0o755u32, // rwxr-xr-x
+            ..Default::default()
+        })
     }
 
     fn into_any(self: Arc<Self>) -> Arc<dyn Any + Send + Sync> {

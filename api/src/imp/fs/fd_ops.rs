@@ -8,9 +8,10 @@ use crate::fd::{
 };
 use axerrno::{AxError, LinuxError, LinuxResult};
 use axfs::fops::OpenOptions;
+use axio::SeekFrom;
 use linux_raw_sys::general::{
-    __kernel_mode_t, AT_FDCWD, F_DUPFD, F_DUPFD_CLOEXEC, F_SETFL, O_APPEND, O_CREAT, O_DIRECTORY,
-    O_NONBLOCK, O_PATH, O_RDONLY, O_TRUNC, O_WRONLY,
+    __kernel_mode_t, __kernel_off_t, AT_FDCWD, F_DUPFD, F_DUPFD_CLOEXEC, F_SETFL, O_APPEND,
+    O_CREAT, O_DIRECTORY, O_NONBLOCK, O_PATH, O_RDONLY, O_TRUNC, O_WRONLY,
 };
 use macro_rules_attribute::apply;
 
@@ -169,4 +170,16 @@ pub fn sys_fcntl(fd: c_int, cmd: c_int, arg: usize) -> LinuxResult<isize> {
             Ok(0)
         }
     }
+}
+
+pub fn sys_lseek(fd: c_int, offset: __kernel_off_t, whence: c_int) -> LinuxResult<isize> {
+    debug!("sys_lseek <= {} {} {}", fd, offset, whence);
+    let pos = match whence {
+        0 => SeekFrom::Start(offset as _),
+        1 => SeekFrom::Current(offset as _),
+        2 => SeekFrom::End(offset as _),
+        _ => return Err(LinuxError::EINVAL),
+    };
+    let off = File::from_fd(fd)?.inner().seek(pos)?;
+    Ok(off as _)
 }

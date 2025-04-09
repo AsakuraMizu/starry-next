@@ -10,7 +10,7 @@ use axerrno::{LinuxError, LinuxResult};
 use axio::PollState;
 use axns::{ResArc, def_resource};
 use flatten_objects::FlattenObjects;
-use linux_raw_sys::general::statx;
+use linux_raw_sys::general::{stat, statx};
 use spin::RwLock;
 
 pub use self::{
@@ -45,40 +45,6 @@ impl Default for Kstat {
             blocks: 0,
             blksize: 4096,
         }
-    }
-}
-
-cfg_if::cfg_if! {
-    if #[cfg(target_arch = "x86_64")] {
-        use core::ffi::{c_long, c_ulong, c_uint};
-
-        #[repr(C)]
-        #[derive(Debug, Copy, Clone)]
-        #[allow(non_camel_case_types)]
-        pub struct stat {
-            pub st_dev: c_ulong,
-            pub st_ino: c_ulong,
-            pub st_mode: c_uint,
-            pub st_nlink: c_uint,
-            pub st_uid: c_uint,
-            pub st_gid: c_uint,
-            pub st_rdev: c_ulong,
-            pub __pad1: c_ulong,
-            pub st_size: c_long,
-            pub st_blksize: c_int,
-            pub __pad2: c_int,
-            pub st_blocks: c_long,
-            pub st_atime: c_long,
-            pub st_atime_nsec: c_ulong,
-            pub st_mtime: c_long,
-            pub st_mtime_nsec: c_ulong,
-            pub st_ctime: c_long,
-            pub st_ctime_nsec: c_ulong,
-            pub __unused4: c_uint,
-            pub __unused5: c_uint,
-        }
-    } else {
-        pub use linux_raw_sys::general::stat;
     }
 }
 

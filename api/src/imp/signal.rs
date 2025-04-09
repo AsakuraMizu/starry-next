@@ -344,3 +344,12 @@ pub fn sys_tgkill(tgid: Pid, tid: Pid, sig: u32) -> LinuxResult<isize> {
     send_signal_thread(&thr, sig);
     Ok(0)
 }
+
+pub fn sys_rt_sigtimedwait(
+    _set: UserConstPtr<c_void>,
+    _info: UserPtr<c_void>,
+    _timeout: UserConstPtr<c_void>,
+) -> LinuxResult<isize> {
+    warn!("sys_rt_sigtimedwait: not implemented");
+    Ok(0)
+}

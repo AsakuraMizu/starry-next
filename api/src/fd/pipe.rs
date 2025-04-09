@@ -111,27 +111,26 @@ impl FileLike for Pipe {
         if !self.readable() {
             return Err(LinuxError::EPERM);
         }
-        let mut read_size = 0usize;
-        let max_len = buf.len();
+        if buf.is_empty() {
+            return Ok(0);
+        }
+
         loop {
             let mut ring_buffer = self.buffer.lock();
-            let loop_read = ring_buffer.available_read();
-            if loop_read == 0 {
+            let read_size = ring_buffer.available_read().min(buf.len());
+            if read_size == 0 {
                 if self.closed() {
-                    return Ok(read_size);
+                    return Ok(0);
                 }
                 drop(ring_buffer);
-                // Data not ready, wait for write end
+                // Buffer is empty, wait for write end to produce
                 axtask::yield_now(); // TODO: use synconize primitive
                 continue;
             }
-            for _ in 0..loop_read {
-                if read_size == max_len {
-                    return Ok(read_size);
-                }
-                buf[read_size] = ring_buffer.read_byte();
-                read_size += 1;
+            for c in buf.iter_mut().take(read_size) {
+                *c = ring_buffer.read_byte();
             }
+            return Ok(read_size);
         }
     }
 
@@ -142,8 +141,12 @@ impl FileLike for Pipe {
         if self.closed() {
             return Err(LinuxError::EPIPE);
         }
+        if buf.is_empty() {
+            return Ok(0);
+        }
+
         let mut write_size = 0usize;
-        let max_len = buf.len();
+        let total_len = buf.len();
         loop {
             let mut ring_buffer = self.buffer.lock();
             let loop_write = ring_buffer.available_write();
@@ -157,7 +160,7 @@ impl FileLike for Pipe {
                 continue;
             }
             for _ in 0..loop_write {
-                if write_size == max_len {
+                if write_size == total_len {
                     return Ok(write_size);
                 }
                 ring_buffer.write_byte(buf[write_size]);

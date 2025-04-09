@@ -10,7 +10,7 @@ use crate::{
 };
 
 #[apply(syscall_instrument)]
-pub fn sys_pipe2(fds: UserPtr<[c_int; 2]>) -> LinuxResult<isize> {
+pub fn sys_pipe(fds: UserPtr<[c_int; 2]>) -> LinuxResult<isize> {
     let fds = fds.get_as_mut()?;
 
     let (read_end, write_end) = Pipe::new();

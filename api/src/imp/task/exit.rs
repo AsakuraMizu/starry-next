@@ -17,6 +17,7 @@ pub fn do_exit(exit_code: i32, group_exit: bool) -> ! {
     }
 
     let thread = &curr.task_ext().thread;
+    info!("{:?} exit with code: {}", thread, exit_code);
     let process = thread.process();
     if thread.exit(exit_code) {
         // TODO: send exit signal to parent

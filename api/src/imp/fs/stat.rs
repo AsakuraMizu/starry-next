@@ -1,12 +1,12 @@
 use core::ffi::{c_char, c_int};
 
-use axerrno::{LinuxError, LinuxResult};
+use axerrno::{AxError, LinuxError, LinuxResult};
 use axfs::fops::OpenOptions;
-use linux_raw_sys::general::{AT_EMPTY_PATH, statx};
+use linux_raw_sys::general::{AT_EMPTY_PATH, stat, statfs, statx};
 use macro_rules_attribute::apply;
 
 use crate::{
-    fd::{File, FileLike, Kstat, get_file_like, stat},
+    fd::{Directory, File, FileLike, Kstat, get_file_like},
     path::handle_file_path,
     ptr::{UserConstPtr, UserPtr, nullable},
     syscall_instrument,
@@ -14,8 +14,14 @@ use crate::{
 
 fn stat_at_path(path: &str) -> LinuxResult<Kstat> {
     let opts = OpenOptions::new().set_read(true);
-    let file = axfs::fops::File::open(path, &opts)?;
-    File::new(file, path.into()).stat()
+    match axfs::fops::File::open(path, &opts) {
+        Ok(file) => File::new(file, path.into()).stat(),
+        Err(AxError::IsADirectory) => {
+            let dir = axfs::fops::Directory::open_dir(path, &opts)?;
+            Directory::new(dir, path.into()).stat()
+        }
+        Err(e) => Err(e.into()),
+    }
 }
 
 /// Get the file metadata by `path` and write into `statbuf`.
@@ -68,12 +74,16 @@ pub fn sys_fstatat(
         dirfd, path, flags
     );
 
-    if path.is_none_or(|s| s.is_empty()) && (flags & AT_EMPTY_PATH) == 0 {
-        return Err(LinuxError::ENOENT);
-    }
-
-    let path = handle_file_path(dirfd, path.unwrap_or_default())?;
-    *statbuf.get_as_mut()? = stat_at_path(path.as_str())?.into();
+    *statbuf.get_as_mut()? = if path.is_none_or(|s| s.is_empty()) {
+        if (flags & AT_EMPTY_PATH) == 0 {
+            return Err(LinuxError::ENOENT);
+        }
+        let f = get_file_like(dirfd)?;
+        f.stat()?.into()
+    } else {
+        let path = handle_file_path(dirfd, path.unwrap_or_default())?;
+        stat_at_path(path.as_str())?.into()
+    };
 
     Ok(0)
 }
@@ -119,12 +129,35 @@ pub fn sys_statx(
         dirfd, path, flags
     );
 
-    if path.is_none_or(|s| s.is_empty()) && (flags & AT_EMPTY_PATH) == 0 {
-        return Err(LinuxError::ENOENT);
-    }
+    *statxbuf.get_as_mut()? = if path.is_none_or(|s| s.is_empty()) {
+        if (flags & AT_EMPTY_PATH) == 0 {
+            return Err(LinuxError::ENOENT);
+        }
+        let f = get_file_like(dirfd)?;
+        f.stat()?.into()
+    } else {
+        let path = handle_file_path(dirfd, path.unwrap_or_default())?;
+        stat_at_path(path.as_str())?.into()
+    };
 
-    let path = handle_file_path(dirfd, path.unwrap_or_default())?;
-    *statxbuf.get_as_mut()? = stat_at_path(path.as_str())?.into();
+    Ok(0)
+}
+
+pub fn sys_statfs(path: UserConstPtr<c_char>, statfsbuf: UserPtr<statfs>) -> LinuxResult<isize> {
+    let path = path.get_as_str()?;
+    debug!("sys_statfs <= path: {:?}", path);
+
+    let mut statfs: statfs = unsafe { core::mem::zeroed() };
+    // TODO: get real statfs
+    statfs.f_bsize = 4096;
+    statfs.f_blocks = 1024;
+    statfs.f_bfree = 512;
+    statfs.f_bavail = 256;
+    statfs.f_files = 1024;
+    statfs.f_ffree = 512;
+    statfs.f_namelen = 255;
+
+    *statfsbuf.get_as_mut()? = statfs;
 
     Ok(0)
 }

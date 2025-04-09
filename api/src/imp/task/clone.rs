@@ -114,12 +114,6 @@ pub fn sys_clone(
     if stack != 0 {
         new_uctx.set_sp(stack);
     }
-    // Skip current instruction
-    #[cfg(any(target_arch = "riscv64", target_arch = "loongarch64"))]
-    {
-        let new_uctx_ip = new_uctx.ip();
-        new_uctx.set_ip(new_uctx_ip + 4);
-    }
     new_uctx.set_retval(0);
 
     let tid = new_task.id().as_u64() as Pid;
