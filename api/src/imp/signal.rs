@@ -7,7 +7,9 @@ use axhal::{
 };
 use axprocess::{Pid, Process, ProcessGroup};
 use axsignal::{
-    ctypes::{k_sigaction, SignalInfo, SignalSet}, handle_signal, PendingSignals, SignalOSAction
+    SignalOSAction,
+    ctypes::{SignalInfo, SignalSet, k_sigaction},
+    handle_signal,
 };
 use axtask::{TaskExtRef, current};
 use linux_raw_sys::general::{siginfo, timespec};
@@ -69,11 +71,7 @@ fn check_signals(tf: &mut TrapFrame, restore_blocked: Option<SignalSet>) -> bool
             // TODO: implement continue
         }
         SignalOSAction::Handler { add_blocked } => {
-            task_ext
-                .thread_data()
-                .blocked
-                .lock()
-                .add_from(&add_blocked);
+            task_ext.thread_data().blocked.lock().add_from(&add_blocked);
         }
     }
     true
@@ -169,9 +167,8 @@ pub fn sys_rt_sigpending(set: UserPtr<SignalSet>, sigsetsize: usize) -> LinuxRes
 
 pub fn sys_rt_sigreturn(tf: &mut TrapFrame) -> LinuxResult<()> {
     let curr = current();
-    let mut thr_sigman = curr.task_ext().thread_data().pending.lock();
     let mut blocked = curr.task_ext().thread_data().blocked.lock();
-    thr_sigman.restore(tf, &mut blocked);
+    axsignal::restore(tf, &mut blocked);
     Ok(())
 }
 
