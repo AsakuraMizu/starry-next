@@ -165,11 +165,11 @@ pub fn sys_rt_sigpending(set: UserPtr<SignalSet>, sigsetsize: usize) -> LinuxRes
     Ok(0)
 }
 
-pub fn sys_rt_sigreturn(tf: &mut TrapFrame) -> LinuxResult<()> {
+pub fn sys_rt_sigreturn(tf: &mut TrapFrame) -> LinuxResult<isize> {
     let curr = current();
     let mut blocked = curr.task_ext().thread_data().blocked.lock();
     axsignal::restore(tf, &mut blocked);
-    Ok(())
+    Ok(tf.retval() as isize)
 }
 
 pub fn sys_rt_sigtimedwait(
@@ -237,7 +237,7 @@ pub fn sys_rt_sigsuspend(
     tf: &mut TrapFrame,
     set: UserPtr<SignalSet>,
     sigsetsize: usize,
-) -> LinuxResult<()> {
+) -> LinuxResult<isize> {
     check_sigset_size(sigsetsize)?;
 
     let curr = current();
@@ -249,13 +249,6 @@ pub fn sys_rt_sigsuspend(
 
     let old_blocked = mem::replace(&mut *thr_data.blocked.lock(), *set);
 
-    // We need to pretend that we returned from the syscall
-    #[cfg(any(
-        target_arch = "riscv32",
-        target_arch = "riscv64",
-        target_arch = "loongarch64"
-    ))]
-    tf.set_ip(tf.ip() + 4);
     tf.set_retval((-LinuxError::EINTR.code() as isize) as usize);
 
     loop {
@@ -265,7 +258,7 @@ pub fn sys_rt_sigsuspend(
         curr.task_ext().process_data().signal_wq.wait();
     }
 
-    Ok(())
+    Ok(0)
 }
 
 fn send_signal_process(proc: &Process, sig: SignalInfo) {
