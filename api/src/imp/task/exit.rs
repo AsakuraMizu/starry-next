@@ -30,7 +30,7 @@ pub fn do_exit(exit_code: i32, group_exit: bool) -> ! {
         process.group_exit();
         let sig = SignalInfo::new(SIGKILL, SI_KERNEL);
         for thr in process.threads() {
-            send_signal_thread(&*thr, sig.clone());
+            send_signal_thread(&thr, sig.clone());
         }
     }
     axtask::exit(exit_code)
