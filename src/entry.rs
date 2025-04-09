@@ -1,6 +1,10 @@
 use alloc::{string::String, sync::Arc};
 use axfs::{CURRENT_DIR, CURRENT_DIR_PATH, api::set_current_dir};
-use axhal::arch::UspaceContext;
+use axhal::{
+    arch::UspaceContext,
+    mem::{PAGE_SIZE_4K, virt_to_phys},
+    paging::MappingFlags,
+};
 use axprocess::{Pid, ProcessBuilder, ThreadBuilder};
 use axsync::Mutex;
 use starry_api::fd::FD_TABLE;
@@ -9,10 +13,21 @@ use starry_core::{
     task::{ProcessData, TaskExt, ThreadData, add_thread_to_table, new_user_task},
 };
 
+unsafe extern "C" {
+    fn start_signal_trampoline();
+}
+
 pub fn run_user_app(args: &[String], envs: &[String]) -> Option<i32> {
     let mut uspace = new_user_aspace_empty()
         .and_then(|mut it| {
             copy_from_kernel(&mut it)?;
+            let signal_trampoline_paddr = virt_to_phys((start_signal_trampoline as usize).into());
+            it.map_linear(
+                axconfig::plat::SIGNAL_TRAMPOLINE.into(),
+                signal_trampoline_paddr,
+                PAGE_SIZE_4K,
+                MappingFlags::READ | MappingFlags::EXECUTE | MappingFlags::USER,
+            )?;
             Ok(it)
         })
         .expect("Failed to create user address space");

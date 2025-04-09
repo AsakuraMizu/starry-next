@@ -9,6 +9,7 @@ use alloc::{
     string::String,
     sync::{Arc, Weak},
 };
+use axerrno::{LinuxError, LinuxResult};
 use axhal::{
     arch::UspaceContext,
     time::{NANOS_PER_MICROS, NANOS_PER_SEC, monotonic_time_nanos},
@@ -16,8 +17,12 @@ use axhal::{
 use axmm::{AddrSpace, kernel_aspace};
 use axns::{AxNamespace, AxNamespaceIf};
 use axprocess::{Pid, Process, ProcessGroup, Session, Thread};
-use axsync::Mutex;
-use axtask::{TaskExtRef, TaskInner, current};
+use axsignal::{
+    PendingSignals,
+    ctypes::{SignalAction, SignalSet},
+};
+use axsync::{Mutex, spin::SpinNoIrq};
+use axtask::{TaskExtRef, TaskInner, WaitQueue, current};
 use memory_addr::VirtAddrRange;
 use spin::{Once, RwLock};
 use weak_map::WeakMap;
@@ -118,6 +123,11 @@ pub struct ThreadData {
     ///
     /// When the thread exits, the kernel clears the word at this address if it is not NULL.
     pub clear_child_tid: AtomicUsize,
+
+    /// The pending signals
+    pub pending: SpinNoIrq<PendingSignals>,
+    /// The set of signals currently blocked from delivery.
+    pub blocked: Mutex<SignalSet>,
 }
 
 impl ThreadData {
@@ -125,6 +135,8 @@ impl ThreadData {
     pub fn new() -> Self {
         Self {
             clear_child_tid: AtomicUsize::new(0),
+            pending: SpinNoIrq::new(PendingSignals::new()),
+            blocked: Mutex::default(),
         }
     }
 
@@ -149,6 +161,16 @@ pub struct ProcessData {
     heap_bottom: AtomicUsize,
     /// The user heap top
     heap_top: AtomicUsize,
+
+    /// The process-level shared pending signals
+    pub pending: SpinNoIrq<PendingSignals>,
+    /// The signal actions
+    pub signal_actions: Mutex<[SignalAction; 32]>,
+    /// The wait queue for signal. Used by `rt_sigtimedwait`, etc.
+    ///
+    /// Note that this is shared by all threads in the process, so false wakeups
+    /// may occur.
+    pub signal_wq: Arc<WaitQueue>,
 }
 
 impl ProcessData {
@@ -159,6 +181,10 @@ impl ProcessData {
             ns: AxNamespace::new_thread_local(),
             heap_bottom: AtomicUsize::new(axconfig::plat::USER_HEAP_BASE),
             heap_top: AtomicUsize::new(axconfig::plat::USER_HEAP_BASE),
+
+            pending: SpinNoIrq::new(PendingSignals::new()),
+            signal_actions: Mutex::default(),
+            signal_wq: Arc::new(WaitQueue::new()),
         }
     }
 
@@ -243,4 +269,14 @@ pub fn add_thread_to_table(thread: &Arc<Thread>) {
         return;
     }
     session_table.insert(session.sid(), &session);
+}
+
+pub fn get_process(pid: Pid) -> LinuxResult<Arc<Process>> {
+    PROCESS_TABLE.read().get(&pid).ok_or(LinuxError::ESRCH)
+}
+pub fn get_process_group(pgid: Pid) -> LinuxResult<Arc<ProcessGroup>> {
+    PROCESS_GROUP_TABLE
+        .read()
+        .get(&pgid)
+        .ok_or(LinuxError::ESRCH)
 }

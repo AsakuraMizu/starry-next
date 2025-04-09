@@ -20,6 +20,7 @@ axsync.workspace = true
 axtask.workspace = true
 
 axprocess.workspace = true
+axsignal.workspace = true
 
 axerrno.workspace = true
 bitflags.workspace = true
@@ -35,6 +36,7 @@ ctor_bare = "0.2.1"
 flatten_objects = "0.2.3"
 macro_rules_attribute = "0.2"
 num_enum = { version = "0.7", default-features = false }
+linkme.workspace = true
 
 [target.'cfg(target_arch = "x86_64")'.dependencies]
 x86 = "0.52"

@@ -7,11 +7,7 @@ use starry_api::*;
 use starry_core::task::{time_stat_from_kernel_to_user, time_stat_from_user_to_kernel};
 use syscalls::Sysno;
 
-#[register_trap_handler(SYSCALL)]
-fn handle_syscall(tf: &TrapFrame, syscall_num: usize) -> isize {
-    let sysno = Sysno::from(syscall_num as u32);
-    info!("Syscall {}", sysno);
-    time_stat_from_user_to_kernel();
+fn run_syscall(tf: &mut TrapFrame, sysno: Sysno) -> LinuxResult<Option<isize>> {
     let result: LinuxResult<isize> = match sysno {
         Sysno::read => sys_read(tf.arg0() as _, tf.arg1().into(), tf.arg2() as _),
         Sysno::write => sys_write(tf.arg0() as _, tf.arg1().into(), tf.arg2() as _),
@@ -121,17 +117,45 @@ fn handle_syscall(tf: &TrapFrame, syscall_num: usize) -> isize {
             tf.arg2().into(),
             tf.arg3() as _,
         ),
+        Sysno::rt_sigtimedwait => sys_rt_sigtimedwait(
+            tf.arg0().into(),
+            tf.arg1().into(),
+            tf.arg2().into(),
+            tf.arg3() as _,
+        ),
+        Sysno::rt_sigsuspend => {
+            return sys_rt_sigsuspend(tf, tf.arg0().into(), tf.arg1() as _).map(|_| None);
+        }
+        Sysno::rt_sigpending => sys_rt_sigpending(tf.arg0().into(), tf.arg1() as _),
+        Sysno::rt_sigreturn => {
+            return sys_rt_sigreturn(tf).map(|_| None);
+        }
+        Sysno::kill => sys_kill(tf.arg0() as _, tf.arg1() as _),
         sysno => {
             warn!("Unimplemented syscall: {}", sysno);
             Err(LinuxError::ENOSYS)
         }
     };
-    let ans = result.unwrap_or_else(|err| -err.code() as _);
+    result.map(Some)
+}
+
+#[register_trap_handler(SYSCALL)]
+fn handle_syscall(tf: &mut TrapFrame, syscall_num: usize) -> Option<isize> {
+    let sysno = Sysno::from(syscall_num as u32);
+    info!("Syscall {}", sysno);
+    time_stat_from_user_to_kernel();
+
+    let result = run_syscall(tf, sysno);
+    let result = match result {
+        Ok(None) => None,
+        Ok(Some(code)) => Some(code),
+        Err(err) => Some(-err.code() as _),
+    };
     time_stat_from_kernel_to_user();
     info!(
-        "Syscall {:?} return {}",
+        "Syscall {:?} return {:?}",
         Sysno::from(syscall_num as u32),
-        ans
+        result,
     );
-    ans
+    result
 }
