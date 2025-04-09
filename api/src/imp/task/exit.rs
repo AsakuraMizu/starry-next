@@ -1,6 +1,8 @@
+use axsignal::ctypes::SignalInfo;
 use axtask::{TaskExtRef, current};
+use linux_raw_sys::general::{SI_KERNEL, SIGKILL};
 
-use crate::fd::FD_TABLE;
+use crate::{fd::FD_TABLE, send_signal_thread};
 
 pub fn do_exit(exit_code: i32, group_exit: bool) -> ! {
     let curr = current();
@@ -25,7 +27,10 @@ pub fn do_exit(exit_code: i32, group_exit: bool) -> ! {
     }
     if group_exit {
         process.group_exit();
-        // TODO: send SIGKILL to other threads
+        let sig = SignalInfo::new(SIGKILL, SI_KERNEL);
+        for thr in process.threads() {
+            send_signal_thread(&*thr, sig.clone());
+        }
     }
     axtask::exit(exit_code)
 }

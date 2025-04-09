@@ -271,6 +271,9 @@ pub fn add_thread_to_table(thread: &Arc<Thread>) {
     session_table.insert(session.sid(), &session);
 }
 
+pub fn get_thread(tid: Pid) -> LinuxResult<Arc<Thread>> {
+    THREAD_TABLE.read().get(&tid).ok_or(LinuxError::ESRCH)
+}
 pub fn get_process(pid: Pid) -> LinuxResult<Arc<Process>> {
     PROCESS_TABLE.read().get(&pid).ok_or(LinuxError::ESRCH)
 }
@@ -279,4 +282,7 @@ pub fn get_process_group(pgid: Pid) -> LinuxResult<Arc<ProcessGroup>> {
         .read()
         .get(&pgid)
         .ok_or(LinuxError::ESRCH)
+}
+pub fn get_session(sid: Pid) -> LinuxResult<Arc<Session>> {
+    SESSION_TABLE.read().get(&sid).ok_or(LinuxError::ESRCH)
 }

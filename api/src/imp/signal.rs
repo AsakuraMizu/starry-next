@@ -5,15 +5,15 @@ use axhal::{
     arch::TrapFrame,
     trap::{POST_TRAP, register_trap_handler},
 };
-use axprocess::{Pid, Process, ProcessGroup};
+use axprocess::{Pid, Process, ProcessGroup, Thread};
 use axsignal::{
     SignalOSAction,
     ctypes::{SignalInfo, SignalSet, k_sigaction},
     handle_signal,
 };
 use axtask::{TaskExtRef, current};
-use linux_raw_sys::general::{siginfo, timespec};
-use starry_core::task::{ProcessData, get_process, get_process_group};
+use linux_raw_sys::general::{SI_USER, siginfo, timespec};
+use starry_core::task::{ProcessData, ThreadData, get_process, get_process_group, get_thread};
 
 use crate::ptr::{UserConstPtr, UserPtr, nullable};
 
@@ -261,13 +261,20 @@ pub fn sys_rt_sigsuspend(
     Ok(0)
 }
 
-fn send_signal_process(proc: &Process, sig: SignalInfo) {
+pub fn send_signal_thread(thr: &Thread, sig: SignalInfo) {
+    info!("Send signal {} to thread {}", sig.signo(), thr.tid());
+    let thr_data: &ThreadData = thr.data().unwrap();
+    let proc_data: &ProcessData = thr.process().data().unwrap();
+    thr_data.pending.lock().send_signal(sig);
+    proc_data.signal_wq.notify_one(false);
+}
+pub fn send_signal_process(proc: &Process, sig: SignalInfo) {
     info!("Send signal {} to process {}", sig.signo(), proc.pid());
     let proc_data: &ProcessData = proc.data().unwrap();
     proc_data.pending.lock().send_signal(sig);
     proc_data.signal_wq.notify_one(false);
 }
-fn send_signal_process_group(pg: &ProcessGroup, sig: SignalInfo) -> usize {
+pub fn send_signal_process_group(pg: &ProcessGroup, sig: SignalInfo) -> usize {
     info!("Send signal {} to process group {}", sig.signo(), pg.pgid());
     let processes = pg.processes();
     for proc in pg.processes() {
@@ -276,16 +283,21 @@ fn send_signal_process_group(pg: &ProcessGroup, sig: SignalInfo) -> usize {
     processes.len()
 }
 
-pub fn sys_kill(pid: i32, sig: i32) -> LinuxResult<isize> {
-    if !(1..32).contains(&sig) {
+fn make_siginfo(signo: u32) -> LinuxResult<Option<SignalInfo>> {
+    if !(1..32).contains(&signo) {
         return Err(LinuxError::EINVAL);
     }
-    if sig == 0 {
+    if signo == 0 {
+        return Ok(None);
+    }
+    Ok(Some(SignalInfo::new(signo, SI_USER)))
+}
+
+pub fn sys_kill(pid: i32, sig: u32) -> LinuxResult<isize> {
+    let Some(sig) = make_siginfo(sig)? else {
         // TODO: should also check permissions
         return Ok(0);
-    }
-
-    let sig = SignalInfo::new(sig as u32, SignalInfo::SI_USER);
+    };
 
     let curr = current();
     let mut result = 0usize;
@@ -311,10 +323,24 @@ pub fn sys_kill(pid: i32, sig: i32) -> LinuxResult<isize> {
             todo!()
         }
         ..-1 => {
-            let pg = get_process_group(pid as Pid)?;
+            let pg = get_process_group((-pid) as Pid)?;
             result += send_signal_process_group(&pg, sig);
         }
     }
 
     Ok(result as isize)
+}
+
+pub fn sys_tgkill(tgid: Pid, tid: Pid, sig: u32) -> LinuxResult<isize> {
+    let Some(sig) = make_siginfo(sig)? else {
+        // TODO: should also check permissions
+        return Ok(0);
+    };
+
+    let thr = get_thread(tid)?;
+    if thr.process().pid() != tgid {
+        return Err(LinuxError::ESRCH);
+    }
+    send_signal_thread(&thr, sig);
+    Ok(0)
 }

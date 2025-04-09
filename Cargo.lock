@@ -385,7 +385,7 @@ dependencies = [
 [[package]]
 name = "axprocess"
 version = "0.1.0"
-source = "git+https://github.com/Starry-OS/axprocess.git#f16a5a1909688054b9fb33d3092f6f5f06bcca29"
+source = "git+https://github.com/Starry-OS/axprocess.git#02cffaf868aac9eca78a5a7feea71a74ed691b3e"
 dependencies = [
  "kspin",
  "weak-map",
