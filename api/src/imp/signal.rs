@@ -348,6 +348,17 @@ pub fn sys_kill(pid: i32, sig: u32) -> LinuxResult<isize> {
     Ok(result as isize)
 }
 
+pub fn sys_tkill(tid: Pid, sig: u32) -> LinuxResult<isize> {
+    let Some(sig) = make_siginfo(sig, SI_TKILL as u32)? else {
+        // TODO: should also check permissions
+        return Ok(0);
+    };
+
+    let thr = get_thread(tid)?;
+    send_signal_thread(&thr, sig);
+    Ok(0)
+}
+
 pub fn sys_tgkill(tgid: Pid, tid: Pid, sig: u32) -> LinuxResult<isize> {
     let Some(sig) = make_siginfo(sig, SI_TKILL as u32)? else {
         // TODO: should also check permissions
