@@ -1,3 +1,5 @@
+use core::sync::atomic::Ordering;
+
 use alloc::sync::Arc;
 use axerrno::{LinuxError, LinuxResult};
 use axfs::{CURRENT_DIR, CURRENT_DIR_PATH};
@@ -17,7 +19,9 @@ use starry_core::{
     task::{ProcessData, TaskExt, ThreadData, add_thread_to_table, new_user_task},
 };
 
-use crate::fd::FD_TABLE;
+use crate::{fd::FD_TABLE, ptr::UserPtr};
+
+use super::on_task_enter;
 
 bitflags! {
     /// Options for use with [`sys_clone`].
@@ -85,9 +89,9 @@ bitflags! {
 pub fn sys_clone(
     flags: u32,
     stack: usize,
-    _ptid: usize,
+    ptid: usize,
     _tls: usize,
-    _ctid: usize,
+    ctid: usize,
 ) -> LinuxResult<isize> {
     const FLAG_MASK: u32 = 0xff;
     let _exit_signal = flags & FLAG_MASK;
@@ -99,7 +103,7 @@ pub fn sys_clone(
     );
 
     let curr = current();
-    let mut new_task = new_user_task(curr.name());
+    let mut new_task = new_user_task(curr.name(), Some(on_task_enter));
 
     // TODO: check SETTLS
     #[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
@@ -184,6 +188,22 @@ pub fn sys_clone(
 
     let thread = process.new_thread(tid).data(ThreadData::new()).build();
     add_thread_to_table(&thread);
+
+    if flags.contains(CloneFlags::PARENT_SETTID) {
+        let ptr: UserPtr<Pid> = ptid.into();
+        if let Ok(tid) = ptr.get_as_mut() {
+            *tid = thread.tid();
+        }
+    }
+    if flags.contains(CloneFlags::CHILD_SETTID) {
+        let thr_data: &ThreadData = thread.data().unwrap();
+        thr_data.set_child_tid.store(ctid, Ordering::Relaxed);
+    }
+    if flags.contains(CloneFlags::CHILD_CLEARTID) {
+        let thr_data: &ThreadData = thread.data().unwrap();
+        thr_data.clear_child_tid.store(ctid, Ordering::Relaxed);
+    }
+
     new_task.init_task_ext(TaskExt::new(new_uctx, thread));
     axtask::spawn_task(new_task);
 

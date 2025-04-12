@@ -1,8 +1,8 @@
+use core::sync::atomic::Ordering;
+
 use axerrno::LinuxResult;
 use axtask::{TaskExtRef, current};
 use num_enum::TryFromPrimitive;
-
-use crate::ptr::UserConstPtr;
 
 pub fn sys_getpid() -> LinuxResult<isize> {
     Ok(axtask::current().task_ext().thread.process().pid() as _)
@@ -46,11 +46,12 @@ enum ArchPrctlCode {
 /// To set the clear_child_tid field in the task extended data.
 ///
 /// The set_tid_address() always succeeds
-pub fn sys_set_tid_address(tid_ptd: UserConstPtr<i32>) -> LinuxResult<isize> {
+pub fn sys_set_tid_address(tid_ptd: usize) -> LinuxResult<isize> {
     let curr = current();
     curr.task_ext()
         .thread_data()
-        .set_clear_child_tid(tid_ptd.address().as_ptr() as _);
+        .clear_child_tid
+        .store(tid_ptd, Ordering::Relaxed);
     Ok(curr.id().as_u64() as isize)
 }
 

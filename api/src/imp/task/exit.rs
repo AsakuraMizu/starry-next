@@ -1,19 +1,26 @@
+use core::sync::atomic::Ordering;
+
 use axsignal::ctypes::SignalInfo;
 use axtask::{TaskExtRef, current};
 use linux_raw_sys::general::{SI_KERNEL, SIGCHLD, SIGKILL};
 use starry_core::task::ProcessData;
 
-use crate::{fd::FD_TABLE, send_signal_process, send_signal_thread};
+use crate::{
+    fd::FD_TABLE,
+    ptr::{UserPtr, nullable},
+    send_signal_process, send_signal_thread,
+};
 
 pub fn do_exit(exit_code: i32, group_exit: bool) -> ! {
     let curr = current();
-    let clear_child_tid = curr.task_ext().thread_data().clear_child_tid() as *mut i32;
-    if !clear_child_tid.is_null() {
-        // TODO: check whether the address is valid
-        unsafe {
-            // TODO: Encapsulate all operations that access user-mode memory into a unified function
-            *(clear_child_tid) = 0;
-        }
+    let clear_child_tid: UserPtr<u32> = curr
+        .task_ext()
+        .thread_data()
+        .clear_child_tid
+        .load(Ordering::Relaxed)
+        .into();
+    if let Ok(Some(clear_tid)) = nullable!(clear_child_tid.get_as_mut()) {
+        *clear_tid = 0;
         // TODO: wake up threads, which are blocked by futex, and waiting for the address pointed by clear_child_tid
     }
 

@@ -32,9 +32,9 @@ use weak_map::WeakMap;
 
 use crate::{resources::Rlimits, time::TimeStat};
 
-pub fn new_user_task(name: &str) -> TaskInner {
+pub fn new_user_task(name: &str, on_enter: Option<fn()>) -> TaskInner {
     TaskInner::new(
-        || {
+        move || {
             let curr = axtask::current();
             let kstack_top = curr.kernel_stack_top().unwrap();
             let uctx = curr.task_ext().uctx.take().unwrap();
@@ -45,6 +45,10 @@ pub fn new_user_task(name: &str) -> TaskInner {
                 uctx.sp(),
                 kstack_top,
             );
+
+            if let Some(on_enter) = on_enter {
+                on_enter();
+            }
             unsafe { uctx.enter_uspace(kstack_top) }
         },
         name.into(),
@@ -126,6 +130,8 @@ pub struct ThreadData {
     ///
     /// When the thread exits, the kernel clears the word at this address if it is not NULL.
     pub clear_child_tid: AtomicUsize,
+    /// The set thread tid field
+    pub set_child_tid: AtomicUsize,
 
     /// The pending signals
     pub pending: SpinNoIrq<PendingSignals>,
@@ -138,18 +144,10 @@ impl ThreadData {
     pub fn new() -> Self {
         Self {
             clear_child_tid: AtomicUsize::new(0),
+            set_child_tid: AtomicUsize::new(0),
             pending: SpinNoIrq::new(PendingSignals::new()),
             blocked: Mutex::default(),
         }
-    }
-
-    pub fn clear_child_tid(&self) -> usize {
-        self.clear_child_tid.load(Ordering::Relaxed)
-    }
-
-    pub fn set_clear_child_tid(&self, clear_child_tid: usize) {
-        self.clear_child_tid
-            .store(clear_child_tid, Ordering::Relaxed);
     }
 }
 
