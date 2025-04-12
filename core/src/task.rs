@@ -6,9 +6,7 @@ use core::{
 };
 
 use alloc::{
-    string::String,
-    sync::{Arc, Weak},
-    vec::Vec,
+    collections::btree_map::BTreeMap, string::String, sync::{Arc, Weak}, vec::Vec
 };
 use axerrno::{LinuxError, LinuxResult};
 use axhal::{
@@ -25,7 +23,7 @@ use axsignal::{
 use axsync::{Mutex, spin::SpinNoIrq};
 use axtask::{TaskExtRef, TaskInner, WaitQueue, current};
 use memory_addr::VirtAddrRange;
-use spin::{Once, RwLock};
+use spin::{Once, rwlock::RwLock};
 use weak_map::WeakMap;
 
 use crate::{resources::Rlimits, time::TimeStat};
@@ -177,6 +175,9 @@ pub struct ProcessData {
     pub signal_wq: WaitQueue,
     /// The wait queue for child exits.
     pub child_exit_wq: WaitQueue,
+
+    /// The futex table.
+    pub futex_table: Mutex<BTreeMap<usize, Arc<WaitQueue>>>,
 }
 
 impl ProcessData {
@@ -194,6 +195,8 @@ impl ProcessData {
             signal_actions: Mutex::default(),
             signal_wq: WaitQueue::new(),
             child_exit_wq: WaitQueue::new(),
+
+            futex_table: Mutex::default(),
         }
     }
 

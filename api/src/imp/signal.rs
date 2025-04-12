@@ -1,4 +1,4 @@
-use core::{mem, time::Duration};
+use core::mem;
 
 use axerrno::{LinuxError, LinuxResult};
 use axhal::{
@@ -7,7 +7,9 @@ use axhal::{
 };
 use axprocess::{Pid, Process, ProcessGroup, Thread};
 use axsignal::{
-    ctypes::{k_sigaction, SignalAction, SignalActionFlags, SignalInfo, SignalSet}, handle_signal, SignalOSAction
+    SignalOSAction,
+    ctypes::{SignalAction, SignalActionFlags, SignalInfo, SignalSet, k_sigaction},
+    handle_signal,
 };
 use axtask::{TaskExtRef, current};
 use linux_raw_sys::general::{SI_TKILL, SI_USER, siginfo, timespec};
@@ -15,7 +17,10 @@ use starry_core::task::{
     ProcessData, ThreadData, get_process, get_process_group, get_thread, processes,
 };
 
-use crate::ptr::{UserConstPtr, UserPtr, nullable};
+use crate::{
+    ptr::{UserConstPtr, UserPtr, nullable},
+    time::timespec_to_timevalue,
+};
 
 use super::do_exit;
 
@@ -194,7 +199,8 @@ pub fn sys_rt_sigtimedwait(
     set.remove_from(&!*thr_data.blocked.lock());
 
     let timeout = nullable!(timeout.get_as_ref())?
-        .map(|spec| Duration::new(spec.tv_sec as u64, spec.tv_nsec as u32));
+        .copied()
+        .map(timespec_to_timevalue);
 
     if let Some(siginfo) = thr_data.pending.lock().dequeue_signal(&set) {
         if let Some(info) = nullable!(info.get_as_mut())? {
