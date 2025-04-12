@@ -1,12 +1,16 @@
 use core::{
     alloc::Layout,
+    array,
     cell::{Cell, RefCell},
     hint::black_box,
     sync::atomic::{AtomicUsize, Ordering},
 };
 
 use alloc::{
-    collections::btree_map::BTreeMap, string::String, sync::{Arc, Weak}, vec::Vec
+    collections::btree_map::BTreeMap,
+    string::String,
+    sync::{Arc, Weak},
+    vec::Vec,
 };
 use axerrno::{LinuxError, LinuxResult};
 use axhal::{
@@ -167,7 +171,7 @@ pub struct ProcessData {
     /// The process-level shared pending signals
     pub pending: SpinNoIrq<PendingSignals>,
     /// The signal actions
-    pub signal_actions: Mutex<[SignalAction; 32]>,
+    pub signal_actions: Mutex<[SignalAction; 64]>,
     /// The wait queue for signal. Used by `rt_sigtimedwait`, etc.
     ///
     /// Note that this is shared by all threads in the process, so false wakeups
@@ -192,7 +196,7 @@ impl ProcessData {
             rlim: RwLock::default(),
 
             pending: SpinNoIrq::new(PendingSignals::new()),
-            signal_actions: Mutex::default(),
+            signal_actions: Mutex::new(array::from_fn(|_| SignalAction::default())),
             signal_wq: WaitQueue::new(),
             child_exit_wq: WaitQueue::new(),
 

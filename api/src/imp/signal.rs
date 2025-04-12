@@ -143,7 +143,7 @@ pub fn sys_rt_sigaction(
     check_sigset_size(sigsetsize)?;
 
     let signum = signum as u32;
-    if !(1..32).contains(&signum) {
+    if !(1..64).contains(&signum) {
         return Err(LinuxError::EINVAL);
     }
     if signum == SIGKILL || signum == SIGSTOP {
@@ -302,7 +302,7 @@ pub fn send_signal_process_group(pg: &ProcessGroup, sig: SignalInfo) -> usize {
 }
 
 fn make_siginfo(signo: u32, code: u32) -> LinuxResult<Option<SignalInfo>> {
-    if !(1..32).contains(&signo) {
+    if !(1..64).contains(&signo) {
         return Err(LinuxError::EINVAL);
     }
     if signo == 0 {
