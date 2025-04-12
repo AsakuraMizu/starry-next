@@ -119,6 +119,10 @@ pub fn sys_clone(
         if !flags.contains(CloneFlags::VM | CloneFlags::SIGHAND) {
             return Err(LinuxError::EINVAL);
         }
+        new_task
+            .ctx_mut()
+            .set_page_table_root(axhal::arch::read_page_table_root());
+
         curr.task_ext().thread.process()
     } else {
         // create a new process
