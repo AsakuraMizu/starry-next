@@ -32,6 +32,7 @@ spin.workspace = true
 starry-core.workspace = true
 
 axio = "0.1.1"
+axfs_vfs = "0.1.1"
 ctor_bare = "0.2.1"
 flatten_objects = "0.2.3"
 num_enum = { version = "0.7", default-features = false }

@@ -1207,6 +1207,7 @@ dependencies = [
  "axerrno",
  "axfeat",
  "axfs",
+ "axfs_vfs",
  "axhal",
  "axio",
  "axlog",

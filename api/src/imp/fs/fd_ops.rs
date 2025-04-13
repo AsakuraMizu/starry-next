@@ -6,9 +6,12 @@ use core::{
 use crate::fd::{
     Directory, FD_TABLE, File, FileLike, add_file_like, close_file_like, get_file_like,
 };
+use alloc::{borrow::ToOwned, string::String};
 use axerrno::{AxError, LinuxError, LinuxResult};
-use axfs::fops::OpenOptions;
+use axfs::{CURRENT_DIR_PATH, fops::OpenOptions};
+use axfs_vfs::VfsNodePerm;
 use axio::SeekFrom;
+use bitflags::bitflags;
 use linux_raw_sys::general::{
     __kernel_mode_t, __kernel_off_t, AT_FDCWD, F_DUPFD, F_DUPFD_CLOEXEC, F_SETFL, O_APPEND,
     O_CREAT, O_DIRECTORY, O_NONBLOCK, O_PATH, O_RDONLY, O_TRUNC, O_WRONLY,
@@ -175,4 +178,56 @@ pub fn sys_lseek(fd: c_int, offset: __kernel_off_t, whence: c_int) -> LinuxResul
     };
     let off = File::from_fd(fd)?.inner().seek(pos)?;
     Ok(off as _)
+}
+
+bitflags! {
+    pub struct AccessModes: u32 {
+        const X_OK = 1;
+        const W_OK = 2;
+        const R_OK = 4;
+    }
+}
+
+fn resolve_path(dirfd: c_int, path: &str) -> LinuxResult<String> {
+    Ok(if path.starts_with('/') {
+        path.to_owned()
+    } else if dirfd == AT_FDCWD {
+        alloc::format!("{}/{}", CURRENT_DIR_PATH.lock(), path)
+    } else {
+        alloc::format!("{}/{}", Directory::from_fd(dirfd)?.path(), path)
+    })
+}
+
+pub fn sys_access(path: UserConstPtr<c_char>, mode: u32) -> LinuxResult<isize> {
+    sys_faccessat(AT_FDCWD, path, mode, 0)
+}
+
+pub fn sys_faccessat(
+    dirfd: c_int,
+    path: UserConstPtr<c_char>,
+    mode: u32,
+    _flags: u32,
+) -> LinuxResult<isize> {
+    // TODO: check flags
+
+    let modes = AccessModes::from_bits(mode).ok_or(LinuxError::EINVAL)?;
+    let mut perms = VfsNodePerm::empty();
+    if modes.contains(AccessModes::R_OK) {
+        perms.insert(VfsNodePerm::OWNER_READ);
+    }
+    if modes.contains(AccessModes::W_OK) {
+        perms.insert(VfsNodePerm::OWNER_WRITE);
+    }
+    if modes.contains(AccessModes::X_OK) {
+        perms.insert(VfsNodePerm::OWNER_EXEC);
+    }
+
+    let path = path.get_as_str()?;
+    let path = resolve_path(dirfd, path)?;
+    let metadata = axfs::api::metadata(&path)?;
+    if !metadata.permissions().contains(perms) {
+        return Err(LinuxError::EACCES);
+    }
+
+    Ok(0)
 }
