@@ -12,7 +12,7 @@ use axsignal::{
     handle_signal,
 };
 use axtask::{TaskExtRef, current};
-use linux_raw_sys::general::{siginfo, timespec, MINSIGSTKSZ, SI_TKILL, SI_USER};
+use linux_raw_sys::general::{MINSIGSTKSZ, SI_TKILL, SI_USER, siginfo, timespec};
 use starry_core::task::{
     ProcessData, ThreadData, get_process, get_process_group, get_thread, processes,
 };
@@ -43,7 +43,7 @@ fn check_signals(tf: &mut TrapFrame, restore_blocked: Option<SignalSet>) -> bool
     let thr_data = task_ext.thread_data();
     let proc_data = task_ext.process_data();
 
-    let mut actions = proc_data.signal_actions.lock();
+    let actions = proc_data.signal_actions.lock();
 
     let blocked = thr_data.blocked.lock();
     let mask = !*blocked;
@@ -70,6 +70,7 @@ fn check_signals(tf: &mut TrapFrame, restore_blocked: Option<SignalSet>) -> bool
             );
         }
     };
+    drop(actions);
 
     match os_action {
         SignalOSAction::Terminate => {
@@ -88,7 +89,7 @@ fn check_signals(tf: &mut TrapFrame, restore_blocked: Option<SignalSet>) -> bool
         }
         SignalOSAction::Handler { add_blocked } => {
             if reset {
-                actions[signo as usize] = SignalAction::default();
+                proc_data.signal_actions.lock()[signo as usize] = SignalAction::default();
             }
             task_ext.thread_data().blocked.lock().add_from(&add_blocked);
         }

@@ -22,7 +22,7 @@ pub fn sys_futex(
     uaddr2: UserPtr<u32>,
     value3: u32,
 ) -> LinuxResult<isize> {
-    info!("futex {:?} {}", uaddr.address(), futex_op);
+    info!("futex {:?} {} {}", uaddr.address(), futex_op, value);
     let curr = current();
     let futex_table = &curr.task_ext().process_data().futex_table;
 

@@ -104,8 +104,8 @@ pub fn sys_clone(
     let flags = CloneFlags::from_bits_truncate(flags & !FLAG_MASK);
 
     info!(
-        "sys_clone <= flags: {:?}, exit_signal: {}, stack: {:#x}",
-        flags, _exit_signal, stack
+        "sys_clone <= flags: {:?}, exit_signal: {}, stack: {:#x}, ptid: {:#x}, ctid: {:#x}, tls: {:#x}",
+        flags, _exit_signal, stack, ptid, ctid, tls
     );
 
     let curr = current();

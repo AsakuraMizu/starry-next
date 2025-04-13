@@ -50,7 +50,7 @@ pub fn do_exit(exit_code: i32, group_exit: bool) -> ! {
         // FIXME: axns should drop all the resources
         FD_TABLE.clear();
     }
-    if group_exit {
+    if group_exit && !process.is_group_exited() {
         process.group_exit();
         let sig = SignalInfo::new(SIGKILL, SI_KERNEL);
         for thr in process.threads() {
