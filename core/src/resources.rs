@@ -9,7 +9,10 @@ pub struct Rlimit {
 }
 impl Rlimit {
     pub fn new(soft: u64, hard: u64) -> Self {
-        Self { current: soft, max: hard }
+        Self {
+            current: soft,
+            max: hard,
+        }
     }
 }
 
