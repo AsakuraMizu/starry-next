@@ -193,6 +193,7 @@ fn handle_syscall(tf: &mut TrapFrame, syscall_num: usize) -> isize {
             tf.arg2() as _,
             tf.arg3() as _,
         ),
+        Sysno::utimensat => Ok(0),
         sysno => {
             warn!("Unimplemented syscall: {}", sysno);
             Err(LinuxError::ENOSYS)
