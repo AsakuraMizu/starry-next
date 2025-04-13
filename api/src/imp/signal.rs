@@ -232,7 +232,7 @@ pub fn sys_rt_sigtimedwait(
             _ => wq.wait(),
         }
 
-        if let Some(signal) = dequeue_signal(&set) {
+        while let Some(signal) = dequeue_signal(&set) {
             if let Some(info) = nullable!(info.get_as_mut())? {
                 signal.to_ctype(info);
             }

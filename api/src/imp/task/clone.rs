@@ -90,7 +90,7 @@ pub fn sys_clone(
     flags: u32,
     stack: usize,
     ptid: usize,
-    _tls: usize,
+    tls: usize,
     ctid: usize,
 ) -> LinuxResult<isize> {
     const FLAG_MASK: u32 = 0xff;
@@ -117,6 +117,10 @@ pub fn sys_clone(
         new_uctx.set_sp(stack);
     }
     new_uctx.set_retval(0);
+
+    if flags.contains(CloneFlags::SETTLS) {
+        new_uctx.regs.tp = tls;
+    }
 
     let tid = new_task.id().as_u64() as Pid;
     let process = if flags.contains(CloneFlags::THREAD) {
