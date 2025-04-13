@@ -31,6 +31,7 @@ fn handle_syscall(tf: &mut TrapFrame, syscall_num: usize) -> isize {
         #[cfg(target_arch = "x86_64")]
         Sysno::unlink => sys_unlink(tf.arg0().into()),
         Sysno::getcwd => sys_getcwd(tf.arg0().into(), tf.arg1() as _),
+        Sysno::utimensat => Ok(0),
 
         // fd ops
         Sysno::openat => sys_openat(
