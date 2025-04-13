@@ -158,6 +158,7 @@ pub fn sys_munmap(addr: usize, length: usize) -> LinuxResult<isize> {
 }
 
 pub fn sys_mprotect(addr: usize, length: usize, prot: u32) -> LinuxResult<isize> {
+    info!("mprotect size: {:#x}, length: {:#x}, prot: {}", addr, length, prot);
     // TODO: implement PROT_GROWSUP & PROT_GROWSDOWN
     let Some(permission_flags) = MmapProt::from_bits(prot) else {
         return Err(LinuxError::EINVAL);
