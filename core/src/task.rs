@@ -22,7 +22,7 @@ use axns::{AxNamespace, AxNamespaceIf};
 use axprocess::{Pid, Process, ProcessGroup, Session, Thread};
 use axsignal::{
     PendingSignals,
-    ctypes::{SignalAction, SignalSet},
+    ctypes::{SignalAction, SignalSet, SignalStack},
 };
 use axsync::{Mutex, spin::SpinNoIrq};
 use axtask::{TaskExtRef, TaskInner, WaitQueue, current};
@@ -137,6 +137,8 @@ pub struct ThreadData {
     pub pending: SpinNoIrq<PendingSignals>,
     /// The set of signals currently blocked from delivery.
     pub blocked: Mutex<SignalSet>,
+    /// The stack used by signal handlers
+    pub signal_stack: Mutex<SignalStack>,
 }
 
 impl ThreadData {
@@ -147,6 +149,7 @@ impl ThreadData {
             set_child_tid: AtomicUsize::new(0),
             pending: SpinNoIrq::new(PendingSignals::new()),
             blocked: Mutex::default(),
+            signal_stack: Mutex::default(),
         }
     }
 }

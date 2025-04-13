@@ -90,9 +90,15 @@ pub fn sys_clone(
     flags: u32,
     stack: usize,
     ptid: usize,
-    tls: usize,
-    ctid: usize,
+    arg3: usize,
+    arg4: usize,
 ) -> LinuxResult<isize> {
+    let (tls, ctid) = if cfg!(any(target_arch = "x86_64", target_arch = "loongarch64")) {
+        (arg4, arg3)
+    } else {
+        (arg3, arg4)
+    };
+
     const FLAG_MASK: u32 = 0xff;
     let _exit_signal = flags & FLAG_MASK;
     let flags = CloneFlags::from_bits_truncate(flags & !FLAG_MASK);
@@ -105,12 +111,6 @@ pub fn sys_clone(
     let curr = current();
     let mut new_task = new_user_task(curr.name(), Some(on_task_enter));
 
-    // TODO: check SETTLS
-    #[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
-    new_task
-        .ctx_mut()
-        .set_tls(axhal::arch::read_thread_pointer().into());
-
     let trap_frame = read_trapframe_from_kstack(curr.get_kernel_stack_top().unwrap());
     let mut new_uctx = UspaceContext::from(&trap_frame);
     if stack != 0 {
@@ -119,7 +119,12 @@ pub fn sys_clone(
     new_uctx.set_retval(0);
 
     if flags.contains(CloneFlags::SETTLS) {
-        new_uctx.regs.tp = tls;
+        let _ = new_uctx.try_set_tls(tls);
+        new_task.ctx_mut().set_tls(tls.into());
+    } else {
+        new_task
+            .ctx_mut()
+            .set_tls(axhal::arch::read_thread_pointer().into());
     }
 
     let tid = new_task.id().as_u64() as Pid;
@@ -127,9 +132,13 @@ pub fn sys_clone(
         if !flags.contains(CloneFlags::VM | CloneFlags::SIGHAND) {
             return Err(LinuxError::EINVAL);
         }
-        new_task
-            .ctx_mut()
-            .set_page_table_root(axhal::arch::read_page_table_root());
+        new_task.ctx_mut().set_page_table_root(
+            curr.task_ext()
+                .process_data()
+                .aspace
+                .lock()
+                .page_table_root(),
+        );
 
         curr.task_ext().thread.process()
     } else {

@@ -176,6 +176,7 @@ fn handle_syscall(tf: &mut TrapFrame, syscall_num: usize) -> isize {
         Sysno::kill => sys_kill(tf.arg0() as _, tf.arg1() as _),
         Sysno::tkill => sys_tkill(tf.arg0() as _, tf.arg1() as _),
         Sysno::tgkill => sys_tgkill(tf.arg0() as _, tf.arg1() as _, tf.arg2() as _),
+        Sysno::sigaltstack => sys_sigaltstack(tf.arg0().into(), tf.arg1().into()),
         Sysno::futex => sys_futex(
             tf.arg0().into(),
             tf.arg1() as _,

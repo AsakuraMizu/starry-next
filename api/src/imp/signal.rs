@@ -8,11 +8,11 @@ use axhal::{
 use axprocess::{Pid, Process, ProcessGroup, Thread};
 use axsignal::{
     SignalOSAction,
-    ctypes::{SignalAction, SignalActionFlags, SignalInfo, SignalSet, k_sigaction},
+    ctypes::{SignalAction, SignalActionFlags, SignalInfo, SignalSet, SignalStack, k_sigaction},
     handle_signal,
 };
 use axtask::{TaskExtRef, current};
-use linux_raw_sys::general::{SI_TKILL, SI_USER, siginfo, timespec};
+use linux_raw_sys::general::{siginfo, timespec, MINSIGSTKSZ, SI_TKILL, SI_USER};
 use starry_core::task::{
     ProcessData, ThreadData, get_process, get_process_group, get_thread, processes,
 };
@@ -40,10 +40,12 @@ fn dequeue_signal(mask: &SignalSet) -> Option<SignalInfo> {
 fn check_signals(tf: &mut TrapFrame, restore_blocked: Option<SignalSet>) -> bool {
     let curr = current();
     let task_ext = curr.task_ext();
+    let thr_data = task_ext.thread_data();
+    let proc_data = task_ext.process_data();
 
-    let mut actions = task_ext.process_data().signal_actions.lock();
+    let mut actions = proc_data.signal_actions.lock();
 
-    let blocked = task_ext.thread_data().blocked.lock();
+    let blocked = thr_data.blocked.lock();
     let mask = !*blocked;
     let restore_blocked = restore_blocked.unwrap_or_else(|| *blocked);
     drop(blocked);
@@ -54,7 +56,13 @@ fn check_signals(tf: &mut TrapFrame, restore_blocked: Option<SignalSet>) -> bool
         };
         let signo = sig.signo();
         let action = &actions[signo as usize];
-        if let Some(os_action) = handle_signal(tf, restore_blocked, sig, action) {
+        if let Some(os_action) = handle_signal(
+            tf,
+            restore_blocked,
+            sig,
+            action,
+            &*thr_data.signal_stack.lock(),
+        ) {
             break (
                 signo,
                 os_action,
@@ -370,5 +378,26 @@ pub fn sys_tgkill(tgid: Pid, tid: Pid, sig: u32) -> LinuxResult<isize> {
         return Err(LinuxError::ESRCH);
     }
     send_signal_thread(&thr, sig);
+    Ok(0)
+}
+
+pub fn sys_sigaltstack(
+    ss: UserConstPtr<SignalStack>,
+    old_ss: UserPtr<SignalStack>,
+) -> LinuxResult<isize> {
+    let curr = current();
+    let mut signal_stack = curr.task_ext().thread_data().signal_stack.lock();
+    if let Some(old_ss) = nullable!(old_ss.get_as_mut())? {
+        *old_ss = signal_stack.clone();
+    }
+    if let Some(ss) = nullable!(ss.get_as_ref())? {
+        if ss.size <= MINSIGSTKSZ as usize {
+            return Err(LinuxError::ENOMEM);
+        }
+        let stack_ptr: UserConstPtr<u8> = ss.sp.into();
+        let _ = stack_ptr.get_as_slice(ss.size)?;
+
+        *signal_stack = ss.clone();
+    }
     Ok(0)
 }
