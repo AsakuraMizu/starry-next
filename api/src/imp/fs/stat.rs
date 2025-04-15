@@ -42,18 +42,12 @@ pub fn sys_fstat(fd: i32, statbuf: UserPtr<stat>) -> LinuxResult<isize> {
     *statbuf.get_as_mut()? = get_file_like(fd)?.stat()?.into();
     Ok(0)
 }
-
 /// Get the metadata of the symbolic link and write into `buf`.
 ///
 /// Return 0 if success.
 pub fn sys_lstat(path: UserConstPtr<c_char>, statbuf: UserPtr<stat>) -> LinuxResult<isize> {
-    let path = path.get_as_str()?;
-    debug!("sys_lstat <= path: {}", path);
-
     // TODO: symlink
-    *statbuf.get_as_mut()? = unsafe { core::mem::zeroed() };
-
-    Ok(0)
+    sys_stat(path, statbuf)
 }
 
 pub fn sys_fstatat(

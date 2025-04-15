@@ -231,3 +231,45 @@ pub fn sys_faccessat(
 
     Ok(0)
 }
+
+bitflags! {
+    #[derive(Debug)]
+    pub struct RenameFlags: u32 {
+        const NOREPLACE = 1;
+        const EXCHANGE = 2;
+        const WHITEOUT = 4;
+    }
+}
+
+pub fn sys_renameat(
+    old_dirfd: c_int,
+    old_path: UserConstPtr<c_char>,
+    new_dirfd: c_int,
+    new_path: UserConstPtr<c_char>,
+) -> LinuxResult<isize> {
+    sys_renameat2(old_dirfd, old_path, new_dirfd, new_path, 0)
+}
+
+pub fn sys_renameat2(
+    old_dirfd: c_int,
+    old_path: UserConstPtr<c_char>,
+    new_dirfd: c_int,
+    new_path: UserConstPtr<c_char>,
+    flags: u32,
+) -> LinuxResult<isize> {
+    let flags = RenameFlags::from_bits(flags).ok_or(LinuxError::EINVAL)?;
+    // TODO: implement exchange and whiteout
+
+    let old_path = resolve_path(old_dirfd, old_path.get_as_str()?)?;
+    let new_path = resolve_path(new_dirfd, new_path.get_as_str()?)?;
+
+    // TODO: atomicity
+    if flags.contains(RenameFlags::NOREPLACE) && axfs::api::metadata(&new_path).is_ok() {
+        return Err(LinuxError::EEXIST);
+    }
+
+    warn!("rename {} to {}", old_path, new_path);
+    axfs::api::rename(&old_path, &new_path)?;
+
+    Ok(0)
+}
