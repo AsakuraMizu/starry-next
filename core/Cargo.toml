@@ -12,10 +12,10 @@ axfs.workspace = true
 axhal.workspace = true
 axlog.workspace = true
 axmm.workspace = true
-axns.workspace = true
 axsync.workspace = true
 axtask.workspace = true
 
+axns.workspace = true
 axprocess.workspace = true
 axsignal.workspace = true
 
@@ -24,6 +24,7 @@ linkme.workspace = true
 memory_addr.workspace = true
 
 crate_interface = "0.1"
+extern-trait = "0.1.1"
 kernel-elf-parser = "0.3"
 numeric-enum-macro = "0.2"
 percpu = "0.2.0"

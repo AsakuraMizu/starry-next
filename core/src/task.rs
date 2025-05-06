@@ -1,7 +1,6 @@
 //! User task management.
 
 use core::{
-    alloc::Layout,
     cell::RefCell,
     sync::atomic::{AtomicUsize, Ordering},
     time::Duration,
@@ -18,7 +17,7 @@ use axhal::{
     time::{NANOS_PER_MICROS, NANOS_PER_SEC, monotonic_time_nanos},
 };
 use axmm::{AddrSpace, kernel_aspace};
-use axns::{AxNamespace, AxNamespaceIf};
+use axns::{CurrentNs, Namespace, global_ns};
 use axprocess::{Pid, Process, ProcessGroup, Session, Thread};
 use axsignal::{
     Signo,
@@ -27,7 +26,7 @@ use axsignal::{
 use axsync::{Mutex, RawMutex};
 use axtask::{TaskExtRef, TaskInner, WaitQueue, current};
 use memory_addr::VirtAddrRange;
-use spin::{Once, RwLock};
+use spin::RwLock;
 use weak_map::WeakMap;
 
 use crate::time::TimeStat;
@@ -194,7 +193,7 @@ pub struct ProcessData {
     /// The virtual memory address space.
     pub aspace: Arc<Mutex<AddrSpace>>,
     /// The resource namespace
-    pub ns: AxNamespace,
+    pub ns: Namespace,
     /// The user heap bottom
     heap_bottom: AtomicUsize,
     /// The user heap top
@@ -220,7 +219,7 @@ impl ProcessData {
         Self {
             exe_path: RwLock::new(exe_path),
             aspace,
-            ns: AxNamespace::new_thread_local(),
+            ns: Namespace::new(),
             heap_bottom: AtomicUsize::new(axconfig::plat::USER_HEAP_BASE),
             heap_top: AtomicUsize::new(axconfig::plat::USER_HEAP_BASE),
 
@@ -273,26 +272,27 @@ impl Drop for ProcessData {
     }
 }
 
-struct AxNamespaceImpl;
-#[crate_interface::impl_interface]
-impl AxNamespaceIf for AxNamespaceImpl {
-    fn current_namespace_base() -> *mut u8 {
-        // Namespace for kernel task
-        static KERNEL_NS_BASE: Once<usize> = Once::new();
-        let current = axtask::current();
-        // Safety: We only check whether the task extended data is null and do not access it.
-        if unsafe { current.task_ext_ptr() }.is_null() {
-            return *(KERNEL_NS_BASE.call_once(|| {
-                let global_ns = AxNamespace::global();
-                let layout = Layout::from_size_align(global_ns.size(), 64).unwrap();
-                // Safety: The global namespace is a static readonly variable and will not be dropped.
-                let dst = unsafe { alloc::alloc::alloc(layout) };
-                let src = global_ns.base();
-                unsafe { core::ptr::copy_nonoverlapping(src, dst, global_ns.size()) };
-                dst as usize
-            })) as *mut u8;
+struct CurrentNsImpl(Option<Arc<Process>>);
+
+impl AsRef<Namespace> for CurrentNsImpl {
+    fn as_ref(&self) -> &Namespace {
+        if let Some(process) = &self.0 {
+            &process.data::<ProcessData>().unwrap().ns
+        } else {
+            global_ns()
         }
-        current.task_ext().process_data().ns.base()
+    }
+}
+
+#[extern_trait::extern_trait]
+unsafe impl CurrentNs for CurrentNsImpl {
+    fn new() -> Self {
+        let current = axtask::current();
+        if unsafe { current.task_ext_ptr() }.is_null() {
+            Self(None)
+        } else {
+            Self(Some(current.task_ext().thread.process().clone()))
+        }
     }
 }
 

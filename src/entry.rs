@@ -1,6 +1,5 @@
 use alloc::{string::String, sync::Arc};
-use arceos_posix_api::FD_TABLE;
-use axfs::{CURRENT_DIR, CURRENT_DIR_PATH, api::set_current_dir};
+use axfs::{CURRENT_DIR, api::set_current_dir};
 use axhal::arch::UspaceContext;
 use axprocess::{Pid, init_proc};
 use axsignal::Signo;
@@ -31,22 +30,18 @@ pub fn run_user_app(args: &[String], envs: &[String]) -> Option<i32> {
     let mut task = new_user_task(name, uctx, None);
     task.ctx_mut().set_page_table_root(uspace.page_table_root());
 
-    let process_data = ProcessData::new(
+    let mut process_data = ProcessData::new(
         exe_path,
         Arc::new(Mutex::new(uspace)),
         Arc::default(),
         Some(Signo::SIGCHLD),
     );
 
-    FD_TABLE
-        .deref_from(&process_data.ns)
-        .init_new(FD_TABLE.copy_inner());
     CURRENT_DIR
-        .deref_from(&process_data.ns)
-        .init_new(CURRENT_DIR.copy_inner());
-    CURRENT_DIR_PATH
-        .deref_from(&process_data.ns)
-        .init_new(CURRENT_DIR_PATH.copy_inner());
+        .get_mut(&mut process_data.ns)
+        .unwrap()
+        .get_mut()
+        .clone_from(&CURRENT_DIR.current().lock());
 
     let tid = task.id().as_u64() as Pid;
     let process = init_proc().fork(tid).data(process_data).build();

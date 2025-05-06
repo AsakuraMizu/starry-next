@@ -1,7 +1,7 @@
 use alloc::sync::Arc;
 use arceos_posix_api::FD_TABLE;
 use axerrno::{LinuxError, LinuxResult};
-use axfs::{CURRENT_DIR, CURRENT_DIR_PATH};
+use axfs::CURRENT_DIR;
 use axhal::arch::{TrapFrame, UspaceContext};
 use axprocess::Pid;
 use axsignal::Signo;
@@ -169,38 +169,38 @@ pub fn sys_clone(
         } else {
             Arc::default()
         };
-        let process_data = ProcessData::new(
+        let mut process_data = ProcessData::new(
             curr.task_ext().process_data().exe_path.read().clone(),
             aspace,
             signal_actions,
             exit_signal,
         );
 
+        let new_ns = &mut process_data.ns;
+        let curr_ns = &curr.task_ext().process_data().ns;
+
         if flags.contains(CloneFlags::FILES) {
-            FD_TABLE
-                .deref_from(&process_data.ns)
-                .init_shared(FD_TABLE.share());
+            FD_TABLE.share_from(new_ns, curr_ns);
         } else {
-            FD_TABLE
-                .deref_from(&process_data.ns)
-                .init_new(FD_TABLE.copy_inner());
+            let new_table = FD_TABLE.get_mut(new_ns).unwrap().get_mut();
+            let old_table = FD_TABLE.get(curr_ns).read();
+            for id in old_table.ids() {
+                new_table
+                    .add_at(id, old_table.get(id).unwrap().clone())
+                    .ok();
+            }
         }
 
         if flags.contains(CloneFlags::FS) {
-            CURRENT_DIR
-                .deref_from(&process_data.ns)
-                .init_shared(CURRENT_DIR.share());
-            CURRENT_DIR_PATH
-                .deref_from(&process_data.ns)
-                .init_shared(CURRENT_DIR_PATH.share());
+            CURRENT_DIR.share_from(new_ns, curr_ns);
         } else {
             CURRENT_DIR
-                .deref_from(&process_data.ns)
-                .init_new(CURRENT_DIR.copy_inner());
-            CURRENT_DIR_PATH
-                .deref_from(&process_data.ns)
-                .init_new(CURRENT_DIR_PATH.copy_inner());
+                .get_mut(new_ns)
+                .unwrap()
+                .get_mut()
+                .clone_from(&CURRENT_DIR.get(curr_ns).lock());
         }
+
         &builder.data(process_data).build()
     };
 

@@ -32,12 +32,12 @@ axfs = { git = "https://github.com/oscomp/arceos.git" }
 axhal = { git = "https://github.com/oscomp/arceos.git", features = ["uspace"] }
 axlog = { git = "https://github.com/oscomp/arceos.git" }
 axmm = { git = "https://github.com/oscomp/arceos.git" }
-axns = { git = "https://github.com/oscomp/arceos.git", features = [
-    "thread-local",
-] }
 axsync = { git = "https://github.com/oscomp/arceos.git" }
 axtask = { git = "https://github.com/oscomp/arceos.git" }
 
+axns = { git = "https://github.com/Starry-OS/axns.git", rev = "622a680", features = [
+    "thread-local",
+] }
 axprocess = { git = "https://github.com/Starry-OS/axprocess.git" }
 axsignal = { git = "https://github.com/Starry-OS/axsignal.git", rev = "b5b6089" }
 

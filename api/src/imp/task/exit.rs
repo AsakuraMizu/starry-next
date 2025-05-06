@@ -35,7 +35,6 @@ pub fn do_exit(exit_code: i32, group_exit: bool) -> ! {
         }
 
         process.exit();
-        // TODO: clear namespace resources
     }
     if group_exit && !process.is_group_exited() {
         process.group_exit();
