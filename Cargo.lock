@@ -1528,7 +1528,6 @@ dependencies = [
  "axsignal",
  "axsync",
  "axtask",
- "crate_interface",
  "extern-trait",
  "kernel-elf-parser",
  "linkme",
