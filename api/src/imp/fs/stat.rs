@@ -2,7 +2,7 @@ use core::ffi::{c_char, c_int};
 
 use axerrno::{AxError, LinuxError, LinuxResult};
 use axfs::fops::OpenOptions;
-use linux_raw_sys::general::{AT_EMPTY_PATH, stat, statx};
+use linux_raw_sys::general::{AT_EMPTY_PATH, stat, statfs, statx};
 
 use crate::{
     file::{Directory, File, FileLike, Kstat, get_file_like},
@@ -127,6 +127,25 @@ pub fn sys_statx(
         let path = handle_file_path(dirfd, path.unwrap_or_default())?;
         stat_at_path(path.as_str())?.into()
     };
+
+    Ok(0)
+}
+
+pub fn sys_statfs(path: UserConstPtr<c_char>, statfsbuf: UserPtr<statfs>) -> LinuxResult<isize> {
+    let path = path.get_as_str()?;
+    debug!("sys_statfs <= path: {:?}", path);
+
+    let mut statfs: statfs = unsafe { core::mem::zeroed() };
+    // TODO: get real statfs
+    statfs.f_bsize = 4096;
+    statfs.f_blocks = 1024;
+    statfs.f_bfree = 512;
+    statfs.f_bavail = 256;
+    statfs.f_files = 1024;
+    statfs.f_ffree = 512;
+    statfs.f_namelen = 255;
+
+    *statfsbuf.get_as_mut()? = statfs;
 
     Ok(0)
 }
