@@ -54,6 +54,18 @@ pub fn sys_readv(fd: i32, iov: UserPtr<iovec>, iocnt: usize) -> LinuxResult<isiz
     Ok(ret)
 }
 
+pub fn sys_pread64(fd: c_int, buf: UserPtr<u8>, len: usize, offset: u64) -> LinuxResult<isize> {
+    let buf = buf.get_as_mut_slice(len)?;
+    debug!(
+        "pread64 <= fd: {}, buf: {:p}, len: {}, offset: {}",
+        fd,
+        buf.as_ptr(),
+        buf.len(),
+        offset
+    );
+    Ok(File::from_fd(fd)?.inner().read_at(offset, buf)? as _)
+}
+
 /// Write data to the file indicated by `fd`.
 ///
 /// Return the written size if success.
