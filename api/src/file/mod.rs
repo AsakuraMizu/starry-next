@@ -23,14 +23,14 @@ pub const AX_FILE_LIMIT: usize = 1024;
 
 #[derive(Debug, Clone, Copy)]
 pub struct Kstat {
-    ino: u64,
-    nlink: u32,
-    uid: u32,
-    gid: u32,
-    mode: u32,
-    size: u64,
-    blocks: u64,
-    blksize: u32,
+    pub ino: u64,
+    pub nlink: u32,
+    pub uid: u32,
+    pub gid: u32,
+    pub mode: u32,
+    pub size: u64,
+    pub blocks: u64,
+    pub blksize: u32,
 }
 
 impl Default for Kstat {

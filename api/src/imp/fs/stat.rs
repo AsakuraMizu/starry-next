@@ -2,7 +2,7 @@ use core::ffi::{c_char, c_int};
 
 use axerrno::{AxError, LinuxError, LinuxResult};
 use axfs::fops::OpenOptions;
-use linux_raw_sys::general::{AT_EMPTY_PATH, stat, statfs, statx};
+use linux_raw_sys::general::{AT_EMPTY_PATH, AT_FDCWD, stat, statfs, statx};
 
 use crate::{
     file::{Directory, File, FileLike, Kstat, get_file_like},
@@ -148,4 +148,50 @@ pub fn sys_statfs(path: UserConstPtr<c_char>, statfsbuf: UserPtr<statfs>) -> Lin
     *statfsbuf.get_as_mut()? = statfs;
 
     Ok(0)
+}
+
+bitflags::bitflags! {
+    #[derive(Debug, Clone, Copy)]
+    pub struct AccessModes: u32 {
+        const X_OK = 1;
+        const W_OK = 2;
+        const R_OK = 4;
+    }
+}
+
+pub fn sys_faccessat(
+    dirfd: c_int,
+    path: UserConstPtr<c_char>,
+    mode: u32,
+    flags: u32,
+) -> LinuxResult<isize> {
+    let path = nullable!(path.get_as_str())?;
+    let mode = AccessModes::from_bits_truncate(mode);
+
+    debug!(
+        "sys_faccessat <= dirfd: {}, path: {:?}, mode: {:?}, flags: {}",
+        dirfd, path, mode, flags
+    );
+
+    let stat = if path.is_none_or(|s| s.is_empty()) {
+        if (flags & AT_EMPTY_PATH) == 0 {
+            return Err(LinuxError::ENOENT);
+        }
+        let f = get_file_like(dirfd)?;
+        f.stat()?
+    } else {
+        let path = handle_file_path(dirfd, path.unwrap_or_default())?;
+        stat_at_path(path.as_str())?
+    };
+
+    let mask = mode.bits() << 6;
+    if stat.mode & mask != mask {
+        return Err(LinuxError::EACCES);
+    }
+
+    Ok(0)
+}
+
+pub fn sys_access(path: UserConstPtr<c_char>, mode: u32) -> LinuxResult<isize> {
+    sys_faccessat(AT_FDCWD, path, mode, 0)
 }

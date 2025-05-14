@@ -120,6 +120,14 @@ fn handle_syscall(tf: &mut TrapFrame, syscall_num: usize) -> isize {
             tf.arg4().into(),
         ),
         Sysno::statfs => sys_statfs(tf.arg0().into(), tf.arg1().into()),
+        Sysno::faccessat => sys_faccessat(
+            tf.arg0() as _,
+            tf.arg1().into(),
+            tf.arg2() as _,
+            tf.arg3() as _,
+        ),
+        #[cfg(target_arch = "x86_64")]
+        Sysno::access => sys_access(tf.arg0().into(), tf.arg1() as _),
 
         // mm
         Sysno::brk => sys_brk(tf.arg0() as _),
