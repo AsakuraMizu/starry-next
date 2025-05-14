@@ -1288,6 +1288,7 @@ dependencies = [
  "crate_interface",
  "kernel-elf-parser",
  "linkme",
+ "linux-raw-sys",
  "memory_addr",
  "numeric-enum-macro",
  "percpu",
