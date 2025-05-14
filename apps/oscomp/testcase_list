@@ -1,0 +1,24 @@
+/musl/busybox sh -c " \
+# ============ setup ============ \
+# bin \
+./busybox mkdir /bin /lib /lib64 \
+# TODO: use symlink instead of copy \
+./busybox cp /musl/busybox /bin/busybox \
+./busybox cp /musl/busybox /bin/sh \
+export PATH=/bin \
+# lib \
+busybox cp -v /glibc/lib/* /lib \
+busybox cp -v /musl/lib/libc.so /lib/ld-musl-riscv64.so.1 \
+busybox cp -v /musl/lib/libc.so /lib/ld-musl-x86_64.so.1 \
+busybox cp -v /musl/lib/libc.so /lib/ld-musl-loongarch-lp64d.so.1 \
+busybox cp -v /musl/lib/libc.so /lib/ld-musl-aarch64.so.1 \
+busybox cp -v /lib/* /lib64 \
+\
+# ============ run musl testcases ============ \
+# basic \
+# ./basic_testcode.sh \
+# ============ run glibc testcases ============ \
+cd /glibc \
+# basic \
+./basic_testcode.sh \
+"
