@@ -18,10 +18,9 @@ fn main() {
 
     let testcases = option_env!("AX_TESTCASES_LIST")
         .unwrap_or_else(|| "Please specify the testcases list by making user_apps")
-        .split(',')
-        .filter(|&x| !x.is_empty());
+        .replace("\\,", "\n");
 
-    for testcase in testcases {
+    for testcase in testcases.split(',') {
         let Some(args) = shlex::split(testcase) else {
             error!("Failed to parse testcase: {:?}", testcase);
             continue;
