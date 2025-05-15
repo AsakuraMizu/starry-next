@@ -8,9 +8,10 @@ use axtask::{TaskExtRef, WaitQueue, current};
 
 /// A table mapping memory addresses to futex wait queues.
 pub struct FutexTable(Mutex<BTreeMap<usize, Arc<WaitQueue>>>);
+
 impl FutexTable {
     /// Creates a new `FutexTable`.
-    pub fn new() -> Self {
+    pub const fn new() -> Self {
         Self(Mutex::new(BTreeMap::new()))
     }
 

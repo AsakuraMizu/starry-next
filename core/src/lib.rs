@@ -3,6 +3,7 @@
 
 #![no_std]
 #![warn(missing_docs)]
+#![allow(clippy::new_without_default)]
 
 #[macro_use]
 extern crate axlog;

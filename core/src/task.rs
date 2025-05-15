@@ -166,7 +166,6 @@ pub struct ThreadData {
 
 impl ThreadData {
     /// Create a new [`ThreadData`].
-    #[allow(clippy::new_without_default)]
     pub fn new(proc: &ProcessData) -> Self {
         Self {
             clear_child_tid: AtomicUsize::new(0),
