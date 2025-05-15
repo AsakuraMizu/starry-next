@@ -10,6 +10,13 @@ use starry_core::task::{ProcessData, ThreadData};
 
 use crate::do_exit;
 
+pub fn check_sigset_size(size: usize) -> LinuxResult<()> {
+    if size != size_of::<SignalSet>() {
+        return Err(LinuxError::EINVAL);
+    }
+    Ok(())
+}
+
 pub fn check_signals(tf: &mut TrapFrame, restore_blocked: Option<SignalSet>) -> bool {
     let Some((sig, os_action)) = current()
         .task_ext()

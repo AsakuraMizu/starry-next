@@ -14,16 +14,12 @@ use starry_core::task::{get_process, get_process_group, get_thread, processes};
 
 use crate::{
     ptr::{UserConstPtr, UserPtr, nullable},
-    signal::{check_signals, send_signal_process, send_signal_process_group, send_signal_thread},
+    signal::{
+        check_signals, check_sigset_size, send_signal_process, send_signal_process_group,
+        send_signal_thread,
+    },
     time::TimeValueLike,
 };
-
-fn check_sigset_size(size: usize) -> LinuxResult<()> {
-    if size != size_of::<SignalSet>() {
-        return Err(LinuxError::EINVAL);
-    }
-    Ok(())
-}
 
 fn parse_signo(signo: u32) -> LinuxResult<Signo> {
     Signo::from_repr(signo as u8).ok_or(LinuxError::EINVAL)
